@@ -23,7 +23,15 @@ export default function HeroSection() {
 
     const slogans = settings?.heroSlogans && settings.heroSlogans.length > 0 ? settings.heroSlogans : ["ครูมืออาชีพ"];
     const stats = settings?.heroStats || [];
-    const profile = settings?.profile || { nameTH: "กำลังโหลด...", nameEN: "Loading...", position: "", bio: "" };
+    const profile = settings?.profile || {
+        nameTH: "กำลังโหลด...",
+        nameEN: "Loading...",
+        position: "",
+        bio: "",
+        imageUrl: "", // Ensure imageUrl exists in fallback
+        department: "",
+        subject: ""
+    };
 
     useEffect(() => {
         const currentSlogan = slogans[currentSloganIndex];

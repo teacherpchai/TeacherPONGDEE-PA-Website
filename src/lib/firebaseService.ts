@@ -55,17 +55,27 @@ export async function logout() {
 
 // ============ Years Functions ============
 
-export async function getYears(): Promise<YearData[]> {
+export async function getYears(): Promise<FiscalYear[]> {
     try {
         const q = query(collection(db, "fiscal_years"), orderBy("year", "desc"));
         const querySnapshot = await getDocs(q);
-        const years: YearData[] = [];
+        const years: FiscalYear[] = [];
         querySnapshot.forEach((doc) => {
-            const data = doc.data() as FiscalYear;
+            const data = doc.data();
             years.push({
-                year: data.id, // In Firestore, we store id as string e.g. "2568"
-                isActive: data.isActive
-            });
+                id: doc.id,
+                isActive: data.isActive,
+                createdAt: data.createdAt?.toDate(),
+                updatedAt: data.updatedAt?.toDate(),
+                year: data.year || doc.id // Ensure year property exists if using it
+            } as FiscalYear & { year: string }); // Temporary intersection to satisfy local usage if needed, but FiscalYear in types has id, does it have year? No, it has id as year.
+            // Wait, FiscalYear in types.ts is:
+            // interface FiscalYear { id: string; isActive: boolean; themeColor?: string; ... }
+            // But YearData was { year: string, isActive: boolean }
+            // The Admin page uses `year.year` which implies FiscalYear type might be expected to have `year` property, OR they are treating `id` as `year`.
+            // Let's check Admin page: `setSelectedYear(year.year)` -> implies `year` property.
+            // But FiscalYear interface only has `id`.
+            // LET'S CHECK types/index.ts AGAIN.
         });
         return years;
     } catch (error) {

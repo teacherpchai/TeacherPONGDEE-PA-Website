@@ -5,7 +5,8 @@
 
 // Model for a Fiscal Year (e.g., "2568")
 export interface FiscalYear {
-    id: string; // "2568", "2569"
+    id: string; // ID should match year string
+    year: string; // "2568", "2569"
     isActive: boolean; // Only one year is active at a time
     themeColor?: string; // Optional: change theme per year
     createdAt?: Date;
