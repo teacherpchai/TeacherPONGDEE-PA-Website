@@ -39,3 +39,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# migration data
+*.csv
+src/data/migration.json
+convert_csv.py
