@@ -4,10 +4,13 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Mail, Lock, LogIn, Loader2, AlertCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { firebaseService } from "@/lib/firebaseService";
 
 export default function AdminLoginPage() {
     const router = useRouter();
-    const { login } = useAuth();
+    const { user } = useAuth(); // Removed login destructuring
+    // If already logged in, redirect (optional check)
+    if (user) router.push("/admin");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [isLoading, setIsLoading] = useState(false);
@@ -19,7 +22,7 @@ export default function AdminLoginPage() {
         setError("");
 
         try {
-            await login(email, password);
+            await firebaseService.login(email, password);
             router.push("/admin");
         } catch (err: any) {
             console.error("Login failed:", err);
