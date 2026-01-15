@@ -16,7 +16,11 @@ const iconMap: Record<string, React.ReactNode> = {
     star: <Star size={24} />,
 };
 
-export default function HeroSection() {
+interface HeroSectionProps {
+    onOpenAbout?: () => void;
+}
+
+export default function HeroSection({ onOpenAbout }: HeroSectionProps) {
     const { settings, loading: isLoading } = useSiteSettings(); // Adapted to use 'loading' from context
     const [currentSloganIndex, setCurrentSloganIndex] = useState(0);
     const [displayedText, setDisplayedText] = useState("");
@@ -34,40 +38,45 @@ export default function HeroSection() {
         subject: ""
     };
 
-    useEffect(() => {
-        const currentSlogan = slogans[currentSloganIndex];
-
-        if (isTyping) {
-            if (displayedText.length < currentSlogan.length) {
-                const timeout = setTimeout(() => {
-                    setDisplayedText(currentSlogan.slice(0, displayedText.length + 1));
-                }, 100);
-                return () => clearTimeout(timeout);
-            } else {
-                const timeout = setTimeout(() => {
-                    setIsTyping(false);
-                }, 2000);
-                return () => clearTimeout(timeout);
-            }
-        } else {
-            if (displayedText.length > 0) {
-                const timeout = setTimeout(() => {
-                    setDisplayedText(displayedText.slice(0, -1));
-                }, 50);
-                return () => clearTimeout(timeout);
-            } else {
-                setCurrentSloganIndex((prev) => (prev + 1) % slogans.length);
-                setIsTyping(true);
-            }
-        }
-    }, [displayedText, isTyping, currentSloganIndex, slogans]);
-
     // Reset when settings change
     useEffect(() => {
+        if (!settings?.heroSlogans) return;
         setCurrentSloganIndex(0);
         setDisplayedText("");
         setIsTyping(true);
     }, [settings?.heroSlogans]);
+
+    // Typewriter effect
+    useEffect(() => {
+        const currentSlogan = slogans[currentSloganIndex];
+
+        let timeout: NodeJS.Timeout;
+
+        if (isTyping) {
+            if (displayedText.length < currentSlogan.length) {
+                timeout = setTimeout(() => {
+                    setDisplayedText(currentSlogan.slice(0, displayedText.length + 1));
+                }, 100);
+            } else {
+                timeout = setTimeout(() => {
+                    setIsTyping(false);
+                }, 2000);
+            }
+        } else {
+            if (displayedText.length > 0) {
+                timeout = setTimeout(() => {
+                    setDisplayedText(displayedText.slice(0, -1));
+                }, 50);
+            } else {
+                // Switch to next slogan
+                timeout = setTimeout(() => {
+                    setCurrentSloganIndex((prev) => (prev + 1) % slogans.length);
+                    setIsTyping(true);
+                }, 0);
+            }
+        }
+        return () => clearTimeout(timeout);
+    }, [displayedText, isTyping, currentSloganIndex, slogans]);
 
     if (isLoading || !settings) {
         return (
@@ -156,8 +165,11 @@ export default function HeroSection() {
                                 ดู PA Performance
                                 <ChevronRight size={20} />
                             </Link>
-                            <a
-                                href="#about"
+                            <button
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    onOpenAbout?.();
+                                }}
                                 className="inline-flex items-center gap-2 px-6 py-3 rounded-full font-medium border-2 transition-all hover:bg-gray-50 font-[family-name:var(--font-sarabun)]"
                                 style={{
                                     borderColor: "var(--royal-blue)",
@@ -165,7 +177,7 @@ export default function HeroSection() {
                                 }}
                             >
                                 เกี่ยวกับ{profile.nameTH.split(" ")[0]}
-                            </a>
+                            </button>
                         </div>
                     </div>
 
