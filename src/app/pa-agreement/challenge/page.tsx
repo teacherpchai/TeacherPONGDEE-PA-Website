@@ -7,7 +7,7 @@ import Footer from "@/components/Footer";
 import { Loader2, TrendingUp, Info, AlertCircle, Lightbulb, Target, Beaker, Users, Wrench, ListCheck, BarChart3, CheckCircle } from "lucide-react";
 import { firebaseService } from "@/lib/firebaseService";
 import { FiscalYear, PATask, ChallengeData } from "@/types";
-import { FiscalYear, PATask, ChallengeData } from "@/types";
+
 import HtmlContent from "@/components/HtmlContent";
 import MathText from "@/components/MathText";
 

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { doc, setDoc, writeBatch, collection } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import migrationData from "@/data/migration.json";
-import { Button } from "@/components/ui/button"; // Assuming I have this, or just standard button if not
+
 import { updateSiteSettings } from "@/lib/firebaseService";
 
 export default function MigrationPage() {
@@ -102,8 +102,8 @@ export default function MigrationPage() {
                     onClick={handleMigrate}
                     disabled={status === "running"}
                     className={`px-6 py-3 rounded-lg font-bold text-white transition-colors w-full ${status === "running"
-                            ? "bg-gray-400 cursor-not-allowed"
-                            : "bg-blue-600 hover:bg-blue-700"
+                        ? "bg-gray-400 cursor-not-allowed"
+                        : "bg-blue-600 hover:bg-blue-700"
                         }`}
                 >
                     {status === "running" ? "Migrating..." : "Start Migration"}
