@@ -1,20 +1,45 @@
 "use client";
 
 import { useState } from "react";
-import { doc, setDoc, writeBatch, collection } from "firebase/firestore";
+import { doc, setDoc, writeBatch } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import migrationData from "@/data/migration.json";
-
 import { updateSiteSettings } from "@/lib/firebaseService";
+import { Upload } from "lucide-react";
 
 export default function MigrationPage() {
-    const [status, setStatus] = useState<"idle" | "running" | "completed" | "error">("idle");
+    const [status, setStatus] = useState<"idle" | "ready" | "running" | "completed" | "error">("idle");
     const [log, setLog] = useState<string[]>([]);
     const [progress, setProgress] = useState(0);
+    const [migrationData, setMigrationData] = useState<any>(null);
 
     const addLog = (msg: string) => setLog(prev => [...prev, msg]);
 
+    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            try {
+                const json = JSON.parse(event.target?.result as string);
+                if (!json.years || !json.tasks) {
+                    throw new Error("Invalid migration file format. Missing 'years' or 'tasks'.");
+                }
+                setMigrationData(json);
+                setStatus("ready");
+                addLog("✅ Loaded migration file successfully.");
+                addLog(`Found: ${json.years.length} Years, ${json.tasks.length} Tasks, Settings: ${json.settings ? "Yes" : "No"}`);
+            } catch (error: any) {
+                alert("Error parsing JSON: " + error.message);
+                setMigrationData(null);
+                setStatus("idle");
+            }
+        };
+        reader.readAsText(file);
+    };
+
     const handleMigrate = async () => {
+        if (!migrationData) return;
         if (!confirm("This will overwrite existing data. Continue?")) return;
 
         setStatus("running");
@@ -60,7 +85,7 @@ export default function MigrationPage() {
                 const batch = writeBatch(db);
                 const chunk = tasks.slice(i, i + batchSize);
 
-                chunk.forEach((task) => {
+                chunk.forEach((task: any) => {
                     const docRef = doc(db, "pa_tasks", task.id);
                     batch.set(docRef, {
                         ...task,
@@ -91,17 +116,40 @@ export default function MigrationPage() {
             <h1 className="text-3xl font-bold mb-6">Data Migration</h1>
 
             <div className="bg-white p-6 rounded-lg shadow mb-6">
-                <h2 className="text-xl font-semibold mb-4">Migration Summary</h2>
-                <ul className="space-y-2 mb-6">
-                    <li>📅 <strong>Years:</strong> {migrationData.years.length}</li>
-                    <li>📝 <strong>PA Tasks:</strong> {migrationData.tasks.length}</li>
-                    <li>⚙️ <strong>Settings:</strong> {migrationData.settings ? "Ready" : "Not Found"}</li>
-                </ul>
+                <h2 className="text-xl font-semibold mb-4">Migration Setup</h2>
+
+                {/* File Upload */}
+                <div className="mb-6">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Upload migration.json
+                    </label>
+                    <div className="flex items-center justify-center w-full">
+                        <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                            <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                <Upload className="w-8 h-8 mb-4 text-gray-500" />
+                                <p className="mb-2 text-sm text-gray-500"><span className="font-semibold">Click to upload</span> or drag and drop</p>
+                                <p className="text-xs text-gray-500">JSON file only</p>
+                            </div>
+                            <input type="file" className="hidden" accept=".json" onChange={handleFileUpload} />
+                        </label>
+                    </div>
+                </div>
+
+                {migrationData && (
+                    <div className="mb-6 bg-blue-50 p-4 rounded-lg">
+                        <h3 className="font-semibold text-blue-800 mb-2">File Summary</h3>
+                        <ul className="space-y-1 text-sm text-blue-700">
+                            <li>📅 <strong>Years:</strong> {migrationData.years.length}</li>
+                            <li>📝 <strong>PA Tasks:</strong> {migrationData.tasks.length}</li>
+                            <li>⚙️ <strong>Settings:</strong> {migrationData.settings ? "Ready" : "Not Found"}</li>
+                        </ul>
+                    </div>
+                )}
 
                 <button
                     onClick={handleMigrate}
-                    disabled={status === "running"}
-                    className={`px-6 py-3 rounded-lg font-bold text-white transition-colors w-full ${status === "running"
+                    disabled={status === "running" || !migrationData}
+                    className={`px-6 py-3 rounded-lg font-bold text-white transition-colors w-full ${status === "running" || !migrationData
                         ? "bg-gray-400 cursor-not-allowed"
                         : "bg-blue-600 hover:bg-blue-700"
                         }`}
@@ -111,7 +159,7 @@ export default function MigrationPage() {
             </div>
 
             {/* Progress Bar */}
-            {status !== "idle" && (
+            {status !== "idle" && status !== "ready" && (
                 <div className="mb-6">
                     <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
                         <div
