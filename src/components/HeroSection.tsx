@@ -159,7 +159,7 @@ export default function HeroSection({ onOpenAbout }: HeroSectionProps) {
                         {/* CTA Buttons */}
                         <div className="flex flex-wrap gap-4 fade-in fade-in-delay-2">
                             <Link
-                                href="/performance"
+                                href="/dashboard"
                                 className="inline-flex items-center gap-2 px-6 py-3 rounded-full font-medium transition-all btn-gold font-[family-name:var(--font-sarabun)]"
                             >
                                 ดู PA Performance
