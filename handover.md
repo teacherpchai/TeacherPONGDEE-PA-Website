@@ -116,7 +116,21 @@ These rules ensure that:
 - **Backend Services**: Firebase (Auth, Firestore, Storage)
 - **Icons**: Lucide React
 - **Charts**: Recharts
-- **PDF**: jsPDF
+- **PDF**: Feature Removed (2026-01-15)
+
+## Recent Updates (2026-01-15)
+
+- **About Page Overhaul**: Moved "About Pongdee" to a dedicated `/about` page. Redesigned with a spacious grid layout.
+- **Workload Visuals**: Implemented subject tags and radial gauge charts for teaching hours. Added side-by-side semester comparison.
+- **Bug Fixes**: Fixed correct indicator codes, HTML rendering issues, and broken links.
+- **Cleanup**: Removed the PDF Export feature as requested.
+
+## Future Development Suggestions
+
+1. **Printable CSS Styling**: Since the PDF export button was removed, consider optimizing the CSS `@media print` styles. This would allow users to print pages directly from the browser (Cmd+P) with a clean, report-like look.
+2. **Dark Mode Polish**: The site supports dark mode via Tailwind, but some custom colors (Royal Blue/Gold) might need adjustment for better contrast in dark environments.
+3. **Image Optimization**: Implementing a blurred placeholder for large hero images would improve the perceived loading speed.
+4. **Interactive Dashboard Filters**: Adding more granular filters (e.g., filter by completion status) to the Dashboard would help manage large sets of PA tasks.
 
 ---
-*Created by Antigravity - 2026-01-14*
+*Last Updated: 2026-01-15*
