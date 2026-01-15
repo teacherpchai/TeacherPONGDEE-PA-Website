@@ -16,11 +16,7 @@ const iconMap: Record<string, React.ReactNode> = {
     star: <Star size={24} />,
 };
 
-interface HeroSectionProps {
-    onOpenAbout?: () => void;
-}
-
-export default function HeroSection({ onOpenAbout }: HeroSectionProps) {
+export default function HeroSection() {
     const { settings, loading: isLoading } = useSiteSettings(); // Adapted to use 'loading' from context
     const [currentSloganIndex, setCurrentSloganIndex] = useState(0);
     const [displayedText, setDisplayedText] = useState("");
@@ -165,11 +161,8 @@ export default function HeroSection({ onOpenAbout }: HeroSectionProps) {
                                 ดู PA Performance
                                 <ChevronRight size={20} />
                             </Link>
-                            <button
-                                onClick={(e) => {
-                                    e.preventDefault();
-                                    onOpenAbout?.();
-                                }}
+                            <Link
+                                href="/about"
                                 className="inline-flex items-center gap-2 px-6 py-3 rounded-full font-medium border-2 transition-all hover:bg-gray-50 font-[family-name:var(--font-sarabun)]"
                                 style={{
                                     borderColor: "var(--royal-blue)",
@@ -177,7 +170,7 @@ export default function HeroSection({ onOpenAbout }: HeroSectionProps) {
                                 }}
                             >
                                 เกี่ยวกับ{profile.nameTH.split(" ")[0]}
-                            </button>
+                            </Link>
                         </div>
                     </div>
 
