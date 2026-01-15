@@ -261,7 +261,7 @@ export default function DashboardPage() {
                                                     title={`ดูรายละเอียด: ${task.title}`}
                                                 >
                                                     <td className="py-3 px-4 font-mono text-xs">
-                                                        {task.indicatorCode}
+                                                        {formatIndicatorCode(task.indicatorCode)}
                                                     </td>
                                                     <td className="py-3 px-4 max-w-[200px] truncate">
                                                         {getCategoryEmoji(task.category)} {task.title}
@@ -349,4 +349,16 @@ function getProgressColor(percent: number): string {
     if (percent >= 80) return "linear-gradient(90deg, #10b981, #059669)";
     if (percent >= 50) return "linear-gradient(90deg, #f59e0b, #d97706)";
     return "linear-gradient(90deg, #ef4444, #dc2626)";
+}
+
+// Convert old indicator codes (2.1.x, 2.2.x, 2.3.x) to new format (1.x, 2.x, 3.x)
+function formatIndicatorCode(code: string): string {
+    // Learning: 2.1.x -> 1.x
+    if (code.startsWith("2.1.")) return "1." + code.substring(4);
+    // Support: 2.2.x -> 2.x
+    if (code.startsWith("2.2.")) return "2." + code.substring(4);
+    // Development: 2.3.x -> 3.x
+    if (code.startsWith("2.3.")) return "3." + code.substring(4);
+
+    return code;
 }

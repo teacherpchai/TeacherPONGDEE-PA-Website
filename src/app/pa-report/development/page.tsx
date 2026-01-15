@@ -12,9 +12,9 @@ import { RichMediaRenderer } from "@/components/media";
 import HtmlContent from "@/components/HtmlContent";
 
 const developmentIndicators = [
-    { code: "2.3.1", title: "พัฒนาตนเองอย่างเป็นระบบและต่อเนื่อง" },
-    { code: "2.3.2", title: "มีส่วนร่วม และเป็นผู้นำในการแลกเปลี่ยนเรียนรู้ทางวิชาชีพ (PLC)" },
-    { code: "2.3.3", title: "นำความรู้ ความสามารถ ทักษะที่ได้จากการพัฒนาตนเองและวิชาชีพมาใช้" },
+    { code: "3.1", title: "พัฒนาตนเองอย่างเป็นระบบและต่อเนื่อง" },
+    { code: "3.2", title: "มีส่วนร่วม และเป็นผู้นำในการแลกเปลี่ยนเรียนรู้ทางวิชาชีพ (PLC)" },
+    { code: "3.3", title: "นำความรู้ ความสามารถ ทักษะที่ได้จากการพัฒนาตนเองและวิชาชีพมาใช้" },
 ];
 
 export default function ReportDevelopmentPage() {
@@ -48,7 +48,16 @@ export default function ReportDevelopmentPage() {
             setLoading(true);
             try {
                 const records = await firebaseService.getPARecords(selectedYear);
-                setPaRecords(records.filter((r) => r.category === "self_dev"));
+                const devRecords = records
+                    .filter((r) => r.category === "self_dev")
+                    .map((r) => {
+                        // Normalize legacy codes (2.3.x -> 3.x)
+                        if (r.indicatorCode.startsWith("2.3.")) {
+                            return { ...r, indicatorCode: "3." + r.indicatorCode.substring(4) };
+                        }
+                        return r;
+                    });
+                setPaRecords(devRecords);
             } catch {
                 console.error("Failed to fetch PA records");
             } finally {

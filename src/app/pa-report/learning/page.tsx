@@ -12,14 +12,14 @@ import { RichMediaRenderer } from "@/components/media";
 import HtmlContent from "@/components/HtmlContent";
 
 const learningIndicators = [
-    { code: "2.1.1", title: "สร้างและหรือพัฒนาหลักสูตร" },
-    { code: "2.1.2", title: "ออกแบบการจัดการเรียนรู้" },
-    { code: "2.1.3", title: "จัดกิจกรรมการเรียนรู้" },
-    { code: "2.1.4", title: "สร้างและหรือพัฒนาสื่อ นวัตกรรม และเทคโนโลยี" },
-    { code: "2.1.5", title: "วัดและประเมินผล" },
-    { code: "2.1.6", title: "ศึกษา วิเคราะห์ และสังเคราะห์ เพื่อแก้ปัญหาหรือพัฒนาการเรียนรู้" },
-    { code: "2.1.7", title: "จัดบรรยากาศที่เอื้อต่อการเรียนรู้" },
-    { code: "2.1.8", title: "อบรมและพัฒนาคุณลักษณะที่ดีของผู้เรียน" },
+    { code: "1.1", title: "สร้างและหรือพัฒนาหลักสูตร" },
+    { code: "1.2", title: "ออกแบบการจัดการเรียนรู้" },
+    { code: "1.3", title: "จัดกิจกรรมการเรียนรู้" },
+    { code: "1.4", title: "สร้างและหรือพัฒนาสื่อ นวัตกรรม และเทคโนโลยี" },
+    { code: "1.5", title: "วัดและประเมินผล" },
+    { code: "1.6", title: "ศึกษา วิเคราะห์ และสังเคราะห์ เพื่อแก้ปัญหาหรือพัฒนาการเรียนรู้" },
+    { code: "1.7", title: "จัดบรรยากาศที่เอื้อต่อการเรียนรู้" },
+    { code: "1.8", title: "อบรมและพัฒนาคุณลักษณะที่ดีของผู้เรียน" },
 ];
 
 export default function ReportLearningPage() {
@@ -53,7 +53,16 @@ export default function ReportLearningPage() {
             setLoading(true);
             try {
                 const records = await firebaseService.getPARecords(selectedYear);
-                setPaRecords(records.filter((r) => r.category === "learning"));
+                const learningRecords = records
+                    .filter((r) => r.category === "learning")
+                    .map((r) => {
+                        // Normalize legacy codes (2.1.x -> 1.x)
+                        if (r.indicatorCode.startsWith("2.1.")) {
+                            return { ...r, indicatorCode: "1." + r.indicatorCode.substring(4) };
+                        }
+                        return r;
+                    });
+                setPaRecords(learningRecords);
             } catch {
                 console.error("Failed to fetch PA records");
             } finally {

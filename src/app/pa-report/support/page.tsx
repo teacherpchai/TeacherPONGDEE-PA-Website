@@ -12,10 +12,10 @@ import { RichMediaRenderer } from "@/components/media";
 import HtmlContent from "@/components/HtmlContent";
 
 const supportIndicators = [
-    { code: "2.2.1", title: "จัดทำข้อมูลสารสนเทศของผู้เรียนและรายวิชา" },
-    { code: "2.2.2", title: "ดำเนินการตามระบบดูแลช่วยเหลือผู้เรียน" },
-    { code: "2.2.3", title: "ปฏิบัติงานวิชาการ และงานอื่น ๆ ของสถานศึกษา" },
-    { code: "2.2.4", title: "ประสานความร่วมมือกับผู้ปกครอง ภาคีเครือข่าย และหรือสถานประกอบการ" },
+    { code: "2.1", title: "จัดทำข้อมูลสารสนเทศของผู้เรียนและรายวิชา" },
+    { code: "2.2", title: "ดำเนินการตามระบบดูแลช่วยเหลือผู้เรียน" },
+    { code: "2.3", title: "ปฏิบัติงานวิชาการ และงานอื่น ๆ ของสถานศึกษา" },
+    { code: "2.4", title: "ประสานความร่วมมือกับผู้ปกครอง ภาคีเครือข่าย และหรือสถานประกอบการ" },
 ];
 
 export default function ReportSupportPage() {
@@ -49,7 +49,16 @@ export default function ReportSupportPage() {
             setLoading(true);
             try {
                 const records = await firebaseService.getPARecords(selectedYear);
-                setPaRecords(records.filter((r) => r.category === "support"));
+                const supportRecords = records
+                    .filter((r) => r.category === "support")
+                    .map((r) => {
+                        // Normalize legacy codes (2.2.x -> 2.x)
+                        if (r.indicatorCode.startsWith("2.2.")) {
+                            return { ...r, indicatorCode: "2." + r.indicatorCode.substring(4) };
+                        }
+                        return r;
+                    });
+                setPaRecords(supportRecords);
             } catch {
                 console.error("Failed to fetch PA records");
             } finally {
