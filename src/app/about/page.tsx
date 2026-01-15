@@ -39,22 +39,29 @@ export default function AboutPage() {
                     </p>
                 </div>
 
-                <div className="grid md:grid-cols-3 gap-8 fade-in fade-in-delay-1">
-                    {/* Education Card */}
-                    <ProfileEducationCard
-                        education={profile.structuredEducation}
-                        legacyEducation={profile.education}
-                        isLoading={loading}
-                    />
+                {/* Top Row: Education & Career */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 fade-in fade-in-delay-1 mb-8">
+                    {/* Education Card (1/3 width on large screens) */}
+                    <div className="lg:col-span-4 flex flex-col h-full">
+                        <ProfileEducationCard
+                            education={profile.structuredEducation}
+                            legacyEducation={profile.education}
+                            isLoading={loading}
+                        />
+                    </div>
 
-                    {/* Career Card */}
-                    <ProfileCareerCard
-                        career={profile.structuredCareer}
-                        legacyCareer={profile.career}
-                        isLoading={loading}
-                    />
+                    {/* Career Card (2/3 width on large screens) */}
+                    <div className="lg:col-span-8 flex flex-col h-full">
+                        <ProfileCareerCard
+                            career={profile.structuredCareer}
+                            legacyCareer={profile.career}
+                            isLoading={loading}
+                        />
+                    </div>
+                </div>
 
-                    {/* Workload Card */}
+                {/* Bottom Row: Workload (Full Width) */}
+                <div className="fade-in fade-in-delay-2">
                     <ProfileWorkloadCard
                         profile={profile}
                         isLoading={loading}
