@@ -62,7 +62,7 @@ export default function WorkloadDisplaySection({ semesterNumber, workload }: Wor
                             <BookOpen size={20} />
                         </div>
                         <h4 className="text-lg font-bold text-gray-800 font-[family-name:var(--font-prompt)]">
-                            1.1 ชั่วโมงตามตารางสอน
+                            ชั่วโมงตามตารางสอน
                         </h4>
                     </div>
 
@@ -115,7 +115,7 @@ export default function WorkloadDisplaySection({ semesterNumber, workload }: Wor
                 <div className="grid md:grid-cols-2 gap-8">
                     {/* 1.2 งานส่งเสริม */}
                     <WorkListDisplay
-                        title="1.2 งานส่งเสริมและสนับสนุนการจัดการเรียนรู้"
+                        title="งานส่งเสริมและสนับสนุนการจัดการเรียนรู้"
                         icon={<Users size={20} />}
                         colorClass="text-emerald-700"
                         iconBgClass="bg-emerald-50"
@@ -124,7 +124,7 @@ export default function WorkloadDisplaySection({ semesterNumber, workload }: Wor
 
                     {/* 1.3 งานพัฒนาคุณภาพ */}
                     <WorkListDisplay
-                        title="1.3 งานพัฒนาคุณภาพการจัดการศึกษา"
+                        title="งานพัฒนาคุณภาพการจัดการศึกษา"
                         icon={<TrendingUp size={20} />}
                         colorClass="text-purple-700"
                         iconBgClass="bg-purple-50"
@@ -133,7 +133,7 @@ export default function WorkloadDisplaySection({ semesterNumber, workload }: Wor
 
                     {/* 1.4 งานนโยบาย */}
                     <WorkListDisplay
-                        title="1.4 งานตอบสนองนโยบายและจุดเน้น"
+                        title="งานตอบสนองนโยบายและจุดเน้น"
                         icon={<Target size={20} />}
                         colorClass="text-orange-700"
                         iconBgClass="bg-orange-50"

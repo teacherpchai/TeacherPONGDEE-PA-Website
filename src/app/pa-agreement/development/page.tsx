@@ -11,9 +11,9 @@ import { firebaseService } from "@/lib/firebaseService";
 import { FiscalYear, PATask } from "@/types";
 
 const developmentIndicators = [
-    { code: "2.3.1", title: "พัฒนาตนเองอย่างเป็นระบบและต่อเนื่อง" },
-    { code: "2.3.2", title: "มีส่วนร่วม และเป็นผู้นำในการแลกเปลี่ยนเรียนรู้ทางวิชาชีพ (PLC)" },
-    { code: "2.3.3", title: "นำความรู้ ความสามารถ ทักษะที่ได้จากการพัฒนาตนเองและวิชาชีพมาใช้" },
+    { code: "3.1", title: "พัฒนาตนเองอย่างเป็นระบบและต่อเนื่อง" },
+    { code: "3.2", title: "มีส่วนร่วม และเป็นผู้นำในการแลกเปลี่ยนเรียนรู้ทางวิชาชีพ (PLC)" },
+    { code: "3.3", title: "นำความรู้ ความสามารถ ทักษะที่ได้จากการพัฒนาตนเองและวิชาชีพมาใช้" },
 ];
 
 export default function DevelopmentPage() {

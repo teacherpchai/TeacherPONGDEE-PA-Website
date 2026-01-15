@@ -317,24 +317,24 @@ export interface PAIndicator {
 }
 
 export const PA_INDICATORS: PAIndicator[] = [
-    // Learning (2.1.x)
-    { code: "2.1.1", title: "สร้างและหรือพัฒนาหลักสูตร", category: "learning" },
-    { code: "2.1.2", title: "ออกแบบการจัดการเรียนรู้", category: "learning" },
-    { code: "2.1.3", title: "จัดกิจกรรมการเรียนรู้", category: "learning" },
-    { code: "2.1.4", title: "สร้างและหรือพัฒนาสื่อ นวัตกรรม และเทคโนโลยี", category: "learning" },
-    { code: "2.1.5", title: "วัดและประเมินผล", category: "learning" },
-    { code: "2.1.6", title: "ศึกษา วิเคราะห์ และสังเคราะห์ เพื่อแก้ปัญหาหรือพัฒนาการเรียนรู้", category: "learning" },
-    { code: "2.1.7", title: "จัดบรรยากาศที่เอื้อต่อการเรียนรู้", category: "learning" },
-    { code: "2.1.8", title: "อบรมและพัฒนาคุณลักษณะที่ดีของผู้เรียน", category: "learning" },
-    // Support (2.2.x)
-    { code: "2.2.1", title: "จัดทำข้อมูลสารสนเทศของผู้เรียนและรายวิชา", category: "support" },
-    { code: "2.2.2", title: "ดำเนินการตามระบบดูแลช่วยเหลือผู้เรียน", category: "support" },
-    { code: "2.2.3", title: "ปฏิบัติงานวิชาการ และงานอื่น ๆ ของสถานศึกษา", category: "support" },
-    { code: "2.2.4", title: "ประสานความร่วมมือกับผู้ปกครอง ภาคีเครือข่าย", category: "support" },
-    // Self Development (2.3.x)
-    { code: "2.3.1", title: "พัฒนาตนเองอย่างเป็นระบบและต่อเนื่อง", category: "self_dev" },
-    { code: "2.3.2", title: "มีส่วนร่วม และเป็นผู้นำในการแลกเปลี่ยนเรียนรู้ทางวิชาชีพ (PLC)", category: "self_dev" },
-    { code: "2.3.3", title: "นำความรู้ ความสามารถ ทักษะที่ได้จากการพัฒนาตนเองและวิชาชีพมาใช้", category: "self_dev" },
+    // Learning (1.x)
+    { code: "1.1", title: "สร้างและหรือพัฒนาหลักสูตร", category: "learning" },
+    { code: "1.2", title: "ออกแบบการจัดการเรียนรู้", category: "learning" },
+    { code: "1.3", title: "จัดกิจกรรมการเรียนรู้", category: "learning" },
+    { code: "1.4", title: "สร้างและหรือพัฒนาสื่อ นวัตกรรม และเทคโนโลยี", category: "learning" },
+    { code: "1.5", title: "วัดและประเมินผล", category: "learning" },
+    { code: "1.6", title: "ศึกษา วิเคราะห์ และสังเคราะห์ เพื่อแก้ปัญหาหรือพัฒนาการเรียนรู้", category: "learning" },
+    { code: "1.7", title: "จัดบรรยากาศที่เอื้อต่อการเรียนรู้", category: "learning" },
+    { code: "1.8", title: "อบรมและพัฒนาคุณลักษณะที่ดีของผู้เรียน", category: "learning" },
+    // Support (2.x)
+    { code: "2.1", title: "จัดทำข้อมูลสารสนเทศของผู้เรียนและรายวิชา", category: "support" },
+    { code: "2.2", title: "ดำเนินการตามระบบดูแลช่วยเหลือผู้เรียน", category: "support" },
+    { code: "2.3", title: "ปฏิบัติงานวิชาการ และงานอื่น ๆ ของสถานศึกษา", category: "support" },
+    { code: "2.4", title: "ประสานความร่วมมือกับผู้ปกครอง ภาคีเครือข่าย", category: "support" },
+    // Self Development (3.x)
+    { code: "3.1", title: "พัฒนาตนเองอย่างเป็นระบบและต่อเนื่อง", category: "self_dev" },
+    { code: "3.2", title: "มีส่วนร่วม และเป็นผู้นำในการแลกเปลี่ยนเรียนรู้ทางวิชาชีพ (PLC)", category: "self_dev" },
+    { code: "3.3", title: "นำความรู้ ความสามารถ ทักษะที่ได้จากการพัฒนาตนเองและวิชาชีพมาใช้", category: "self_dev" },
     // Challenge
     { code: "challenge-1", title: "ประเด็นท้าทาย เรื่องที่ 1", category: "challenge" },
     { code: "challenge-2", title: "ประเด็นท้าทาย เรื่องที่ 2 (Optional)", category: "challenge" },
