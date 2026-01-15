@@ -24,7 +24,7 @@ import {
     DashboardStats,
     getCategoryEmoji,
 } from "@/lib/dashboardUtils";
-import ExportPDFButton from "@/components/ExportPDFButton";
+
 
 // Category icon mapping
 const categoryIcons = {
@@ -123,15 +123,6 @@ export default function DashboardPage() {
                             ))}
                         </select>
 
-                        {/* Export PDF Button */}
-                        {profile && (
-                            <ExportPDFButton
-                                year={selectedYear}
-                                tasks={tasks}
-                                profile={profile}
-                                size="md"
-                            />
-                        )}
                     </div>
                 </div>
             </header>
