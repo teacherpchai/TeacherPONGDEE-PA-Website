@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { X, ZoomIn } from "lucide-react";
+import HtmlContent from "@/components/HtmlContent";
 
 interface ImageWithCaptionProps {
     src: string;
@@ -55,9 +56,9 @@ export default function ImageWithCaption({
             </div>
 
             {description && (
-                <p className="text-sm text-gray-600 mt-2 font-[family-name:var(--font-sarabun)]">
-                    {description}
-                </p>
+                <div className="mt-2">
+                    <HtmlContent content={description} className="text-sm text-gray-600" />
+                </div>
             )}
 
             {/* Lightbox */}
@@ -82,9 +83,14 @@ export default function ImageWithCaption({
                             className="max-w-full max-h-[85vh] object-contain rounded-lg"
                         />
                         {(title || description) && (
-                            <p className="text-center text-white/80 mt-4 font-[family-name:var(--font-sarabun)]">
-                                {title}{description && ` - ${description}`}
-                            </p>
+                            <div className="text-center text-white/80 mt-4 font-[family-name:var(--font-sarabun)]">
+                                {title}
+                                {description && (
+                                    <div className="inline-block text-left mt-1">
+                                        - <HtmlContent content={description} className="inline" />
+                                    </div>
+                                )}
+                            </div>
                         )}
                     </div>
                 </div>

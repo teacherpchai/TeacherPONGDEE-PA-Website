@@ -36,6 +36,7 @@ export interface ChartDataPoint {
 export interface VisualizationData {
     chartType: "bar" | "pie" | "progress" | "none";
     chartTitle?: string;
+    chartDescription?: string; // Rich text description for the chart
     dataPoints: ChartDataPoint[];
 }
 
@@ -67,6 +68,7 @@ export interface PATask {
     outcomes: string; // ผลลัพธ์ (Outcomes) ที่คาดหวังให้เกิดขึ้นกับผู้เรียน
     indicators: string; // ตัวชี้วัด (Indicators) ที่แสดงถึงการเปลี่ยนแปลง
     actualResults: string; // ผลการปฏิบัติงานจริง (สำหรับรายงานผล)
+    // description removed as per new requirement
     evidenceFiles: EvidenceFile[]; // Array of file links
     visualization?: VisualizationData; // Chart data for visualization
     mediaGallery?: EvidenceFile[]; // Inline images/videos for display

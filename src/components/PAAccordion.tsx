@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ChevronDown, CheckCircle2, ClipboardList, Target, TrendingUp } from "lucide-react";
+import HtmlContent from "@/components/HtmlContent";
 
 interface PAAccordionProps {
     indicatorCode: string;
@@ -87,12 +88,13 @@ export default function PAAccordion({ indicatorCode, title, agreement, outcomes,
                                 ข้อตกลง PA
                             </h4>
                         </div>
-                        <p
-                            className="text-sm leading-relaxed font-[family-name:var(--font-sarabun)] whitespace-pre-wrap"
+                        <div
+                            className="text-sm leading-relaxed font-[family-name:var(--font-sarabun)]"
                             style={{ color: "var(--foreground-muted)" }}
                         >
-                            {agreement || "ยังไม่มีข้อมูล"}
-                        </p>
+                            <HtmlContent content={agreement} />
+                            {!agreement && "ยังไม่มีข้อมูล"}
+                        </div>
                     </div>
 
                     {/* Two Column Layout for Outcomes & Indicators */}
@@ -108,12 +110,13 @@ export default function PAAccordion({ indicatorCode, title, agreement, outcomes,
                                     ผลลัพธ์ที่คาดหวัง
                                 </h4>
                             </div>
-                            <p
-                                className="text-sm leading-relaxed font-[family-name:var(--font-sarabun)] whitespace-pre-wrap"
+                            <div
+                                className="text-sm leading-relaxed font-[family-name:var(--font-sarabun)]"
                                 style={{ color: "var(--foreground-muted)" }}
                             >
-                                {outcomes || "ยังไม่มีข้อมูล"}
-                            </p>
+                                <HtmlContent content={outcomes || ""} />
+                                {!outcomes && "ยังไม่มีข้อมูล"}
+                            </div>
                         </div>
 
                         {/* Indicators Section */}
@@ -127,12 +130,13 @@ export default function PAAccordion({ indicatorCode, title, agreement, outcomes,
                                     ตัวชี้วัดความสำเร็จ
                                 </h4>
                             </div>
-                            <p
-                                className="text-sm leading-relaxed font-[family-name:var(--font-sarabun)] whitespace-pre-wrap"
+                            <div
+                                className="text-sm leading-relaxed font-[family-name:var(--font-sarabun)]"
                                 style={{ color: "var(--foreground-muted)" }}
                             >
-                                {indicators || "ยังไม่มีข้อมูล"}
-                            </p>
+                                <HtmlContent content={indicators || ""} />
+                                {!indicators && "ยังไม่มีข้อมูล"}
+                            </div>
                         </div>
                     </div>
                 </div>

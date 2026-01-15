@@ -34,6 +34,7 @@ import {
 import { extractYouTubeId } from "@/components/media";
 import ChallengeForm from "@/components/ChallengeForm";
 import RichTextEditor from "@/components/RichTextEditor";
+import HtmlContent from "@/components/HtmlContent";
 
 type AdminMode = "agreement" | "report";
 
@@ -66,8 +67,9 @@ export default function AdminDashboard() {
         actualResults: "",
         chartType: "none" as "bar" | "pie" | "progress" | "none",
         chartTitle: "",
+        chartDescription: "",
         chartData: [] as { label: string; value: string }[],
-        richMedia: [] as { id: string; type: "image" | "video" | "youtube"; title: string; url: string; youtubeId?: string }[],
+        richMedia: [] as { id: string; type: "image" | "video" | "youtube"; title: string; description: string; url: string; youtubeId?: string }[],
     });
 
     // Form states for Challenge (structured form)
@@ -177,11 +179,13 @@ export default function AdminDashboard() {
             actualResults: record?.actualResults || "",
             chartType: viz?.chartType || "none",
             chartTitle: viz?.chartTitle || "",
+            chartDescription: viz?.chartDescription || "",
             chartData: viz?.dataPoints?.map(d => ({ label: d.label, value: String(d.value) })) || [],
             richMedia: record?.richMedia?.map(m => ({
                 id: m.id,
                 type: m.type,
                 title: m.title || "",
+                description: m.description || "",
                 url: m.url,
                 youtubeId: m.youtubeId,
             })) || [],
@@ -276,6 +280,7 @@ export default function AdminDashboard() {
         return {
             chartType: reportFormData.chartType,
             chartTitle: reportFormData.chartTitle || undefined,
+            chartDescription: reportFormData.chartDescription || undefined,
             dataPoints: reportFormData.chartData
                 .filter(d => d.label && d.value)
                 .map(d => ({ label: d.label, value: parseFloat(d.value) || 0 })),
@@ -312,6 +317,7 @@ export default function AdminDashboard() {
             id: Date.now().toString(),
             type,
             title: "",
+            description: "",
             url: "",
             youtubeId: undefined as string | undefined,
         };
@@ -352,6 +358,7 @@ export default function AdminDashboard() {
             id: m.id,
             type: m.type,
             title: m.title || undefined,
+            description: m.description || undefined,
             url: m.url,
             youtubeId: m.youtubeId,
             order: index,
@@ -726,10 +733,14 @@ export default function AdminDashboard() {
                                                             />
                                                         </div>
 
+                                                        {/* Description removed from here */}
+
                                                         {record?.agreement && (
                                                             <div className="p-3 rounded-lg bg-blue-50 text-sm">
                                                                 <strong className="text-blue-700">ข้อตกลงที่ระบุไว้:</strong>
-                                                                <p className="text-blue-600 mt-1">{record.agreement}</p>
+                                                                <div className="text-blue-600 mt-1">
+                                                                    <HtmlContent content={record.agreement} />
+                                                                </div>
                                                             </div>
                                                         )}
 
@@ -765,6 +776,18 @@ export default function AdminDashboard() {
                                                                     />
                                                                 </div>
                                                             </div>
+
+                                                            {reportFormData.chartType !== "none" && (
+                                                                <div className="mb-4">
+                                                                    <label className="text-xs text-gray-500 block mb-1">คำอธิบายใต้กราฟ</label>
+                                                                    <RichTextEditor
+                                                                        value={reportFormData.chartDescription}
+                                                                        onChange={(html) => setReportFormData(prev => ({ ...prev, chartDescription: html }))}
+                                                                        placeholder="คำอธิบายเพิ่มเติมเกี่ยวกับกราฟ..."
+                                                                        minHeight="100px"
+                                                                    />
+                                                                </div>
+                                                            )}
 
                                                             {reportFormData.chartType !== "none" && (
                                                                 <div className="space-y-2">
@@ -850,6 +873,14 @@ export default function AdminDashboard() {
                                                                                     placeholder="หัวข้อ (ไม่จำเป็น)"
                                                                                     className="w-full px-3 py-1.5 rounded border text-sm"
                                                                                 />
+                                                                                <div className="border rounded-md overflow-hidden">
+                                                                                    <RichTextEditor
+                                                                                        value={item.description}
+                                                                                        onChange={(html) => updateRichMediaItem(item.id, "description", html)}
+                                                                                        placeholder="คำอธิบายใต้ภาพ/วิดีโอ..."
+                                                                                        minHeight="80px"
+                                                                                    />
+                                                                                </div>
                                                                                 <input
                                                                                     type="text"
                                                                                     value={item.url}
@@ -921,15 +952,16 @@ export default function AdminDashboard() {
                                                         <h3 className="font-medium font-[family-name:var(--font-sarabun)]" style={{ color: "var(--foreground)" }}>
                                                             {indicator.title}
                                                         </h3>
+                                                        {/* Fix: Render as HTML using HtmlContent */}
                                                         {adminMode === "agreement" && record?.agreement && (
-                                                            <p className="text-sm text-gray-500 line-clamp-1 mt-1">
-                                                                {record.agreement}
-                                                            </p>
+                                                            <div className="mt-1">
+                                                                <HtmlContent content={record.agreement} className="text-sm text-gray-500 line-clamp-2" />
+                                                            </div>
                                                         )}
                                                         {adminMode === "report" && record?.actualResults && (
-                                                            <p className="text-sm text-gray-500 line-clamp-1 mt-1">
-                                                                {record.actualResults}
-                                                            </p>
+                                                            <div className="mt-1">
+                                                                <HtmlContent content={record.actualResults} className="text-sm text-gray-500 line-clamp-2" />
+                                                            </div>
                                                         )}
                                                     </div>
                                                 </div>

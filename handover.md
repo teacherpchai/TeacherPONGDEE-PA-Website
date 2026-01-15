@@ -44,7 +44,16 @@ This project is a complete migration of the Teacher PONGDEE PA Website from a Go
 
 ## Deployment (Vercel)
 
-This project is optimized for deployment on Vercel.
+This project is optimized for- **Deployment**: Vercel (Auto-deploy via Git push)
+
+- **CMS**: Admin Dashboard with Firebase
+- **Rich Text**: Tiptap Editor with `HtmlContent` component for rendering
+
+## Status
+
+- Core features implemented.
+- Rich text rendering fixed for public pages and Home page.
+- Admin Panel functional for PA Agreement and Reports.
 
 1. **Push to GitHub**:
     Initialize a git repo (if not already done), add all files, and push to GitHub.

@@ -5,6 +5,7 @@ import { ChevronRight, Award, Users, BookOpen, FlaskConical, Star } from "lucide
 import Link from "next/link";
 import { useSiteSettings } from "@/contexts/SiteSettingsContext";
 import Image from "next/image";
+import HtmlContent from "@/components/HtmlContent";
 
 // Map icon names to components
 const iconMap: Record<string, React.ReactNode> = {
@@ -139,12 +140,12 @@ export default function HeroSection() {
                         </div>
 
                         {/* Description */}
-                        <p
+                        <div
                             className="text-lg max-w-lg leading-relaxed font-[family-name:var(--font-sarabun)] fade-in fade-in-delay-1"
                             style={{ color: "var(--foreground-muted)" }}
                         >
-                            {profile.bio}
-                        </p>
+                            <HtmlContent content={profile.bio} />
+                        </div>
 
                         {/* CTA Buttons */}
                         <div className="flex flex-wrap gap-4 fade-in fade-in-delay-2">

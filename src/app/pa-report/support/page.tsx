@@ -9,6 +9,7 @@ import { firebaseService } from "@/lib/firebaseService";
 import { FiscalYear, PATask } from "@/types";
 import { VisualizationRenderer } from "@/components/visualizations";
 import { RichMediaRenderer } from "@/components/media";
+import HtmlContent from "@/components/HtmlContent";
 
 const supportIndicators = [
     { code: "2.2.1", title: "จัดทำข้อมูลสารสนเทศของผู้เรียนและรายวิชา" },
@@ -137,7 +138,11 @@ export default function ReportSupportPage() {
                                         </div>
 
                                         <div className="text-sm text-gray-600 font-[family-name:var(--font-sarabun)] mb-4">
-                                            {record?.actualResults || record?.outcomes || "ยังไม่มีข้อมูลผลการดำเนินงาน"}
+                                            {record?.actualResults || record?.outcomes ? (
+                                                <HtmlContent content={record.actualResults || record.outcomes || ""} />
+                                            ) : (
+                                                "ยังไม่มีข้อมูลผลการดำเนินงาน"
+                                            )}
                                         </div>
 
                                         {/* Visualization */}

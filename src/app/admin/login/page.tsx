@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Mail, Lock, LogIn, Loader2, AlertCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -9,8 +9,11 @@ import { firebaseService } from "@/lib/firebaseService";
 export default function AdminLoginPage() {
     const router = useRouter();
     const { user } = useAuth(); // Removed login destructuring
-    // If already logged in, redirect (optional check)
-    if (user) router.push("/admin");
+    useEffect(() => {
+        if (user) {
+            router.push("/admin");
+        }
+    }, [user, router]);
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [isLoading, setIsLoading] = useState(false);

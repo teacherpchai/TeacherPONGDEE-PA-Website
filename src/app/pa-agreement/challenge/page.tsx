@@ -7,6 +7,8 @@ import Footer from "@/components/Footer";
 import { Loader2, TrendingUp, Info, AlertCircle, Lightbulb, Target, Beaker, Users, Wrench, ListCheck, BarChart3, CheckCircle } from "lucide-react";
 import { firebaseService } from "@/lib/firebaseService";
 import { FiscalYear, PATask, ChallengeData } from "@/types";
+import { FiscalYear, PATask, ChallengeData } from "@/types";
+import HtmlContent from "@/components/HtmlContent";
 import MathText from "@/components/MathText";
 
 export default function ChallengePage() {
@@ -268,7 +270,9 @@ function SubSection({
                 <h4 className="text-sm font-semibold text-gray-600 font-[family-name:var(--font-prompt)]">{label}</h4>
             </div>
             <div className="text-gray-700 font-[family-name:var(--font-sarabun)] leading-relaxed">
-                <MathText>{content}</MathText>
+                <div className="text-gray-700 font-[family-name:var(--font-sarabun)] leading-relaxed">
+                    <MathText block>{content}</MathText>
+                </div>
             </div>
         </div>
     );
@@ -298,7 +302,9 @@ function SimpleCard({
                         {title}
                     </h3>
                     <div className="text-gray-600 font-[family-name:var(--font-sarabun)] leading-relaxed">
-                        <MathText>{content}</MathText>
+                        <div className="text-gray-600 font-[family-name:var(--font-sarabun)] leading-relaxed">
+                            <HtmlContent content={content} />
+                        </div>
                     </div>
                 </div>
             </div>

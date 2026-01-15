@@ -9,6 +9,7 @@ import { firebaseService } from "@/lib/firebaseService";
 import { FiscalYear, PATask } from "@/types";
 import { VisualizationRenderer } from "@/components/visualizations";
 import { RichMediaRenderer } from "@/components/media";
+import HtmlContent from "@/components/HtmlContent";
 
 const learningIndicators = [
     { code: "2.1.1", title: "สร้างและหรือพัฒนาหลักสูตร" },
@@ -141,7 +142,11 @@ export default function ReportLearningPage() {
                                         </div>
 
                                         <div className="text-sm text-gray-600 font-[family-name:var(--font-sarabun)] mb-4">
-                                            {record?.actualResults || record?.outcomes || "ยังไม่มีข้อมูลผลการดำเนินงาน"}
+                                            {record?.actualResults || record?.outcomes ? (
+                                                <HtmlContent content={record.actualResults || record.outcomes || ""} />
+                                            ) : (
+                                                "ยังไม่มีข้อมูลผลการดำเนินงาน"
+                                            )}
                                         </div>
 
                                         {/* Visualization */}

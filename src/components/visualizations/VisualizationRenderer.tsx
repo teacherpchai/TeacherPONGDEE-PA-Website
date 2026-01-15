@@ -4,6 +4,7 @@ import type { VisualizationData } from "@/types";
 import SimpleBarChart from "./SimpleBarChart";
 import ProgressBar from "./ProgressBar";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
+import HtmlContent from "@/components/HtmlContent";
 
 interface VisualizationRendererProps {
     data: VisualizationData;
@@ -33,6 +34,11 @@ export default function VisualizationRenderer({ data, className = "" }: Visualiz
                         data={data.dataPoints}
                         title={data.chartTitle}
                     />
+                    {data.chartDescription && (
+                        <div className="mt-4">
+                            <HtmlContent content={data.chartDescription} className="text-sm text-gray-600" />
+                        </div>
+                    )}
                 </div>
             );
 
@@ -59,6 +65,11 @@ export default function VisualizationRenderer({ data, className = "" }: Visualiz
                             />
                         ))}
                     </div>
+                    {data.chartDescription && (
+                        <div className="mt-6 pt-4 border-t border-gray-100">
+                            <HtmlContent content={data.chartDescription} className="text-sm text-gray-600" />
+                        </div>
+                    )}
                 </div>
             );
 
@@ -106,6 +117,11 @@ export default function VisualizationRenderer({ data, className = "" }: Visualiz
                             />
                         </PieChart>
                     </ResponsiveContainer>
+                    {data.chartDescription && (
+                        <div className="mt-2 text-center">
+                            <HtmlContent content={data.chartDescription} className="text-sm text-gray-600 inline-block text-left" />
+                        </div>
+                    )}
                 </div>
             );
 

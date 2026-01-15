@@ -1,5 +1,7 @@
 "use client";
 
+import HtmlContent from "@/components/HtmlContent";
+
 interface YouTubeEmbedProps {
     videoId: string;
     title?: string;
@@ -41,9 +43,9 @@ export default function YouTubeEmbed({ videoId, title, description }: YouTubeEmb
             </div>
 
             {description && (
-                <p className="text-sm text-gray-600 mt-2 font-[family-name:var(--font-sarabun)]">
-                    {description}
-                </p>
+                <div className="mt-2">
+                    <HtmlContent content={description} className="text-sm text-gray-600" />
+                </div>
             )}
         </div>
     );

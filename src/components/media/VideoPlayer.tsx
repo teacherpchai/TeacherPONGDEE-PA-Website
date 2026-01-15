@@ -1,5 +1,7 @@
 "use client";
 
+import HtmlContent from "@/components/HtmlContent";
+
 interface VideoPlayerProps {
     src: string;
     title?: string;
@@ -31,9 +33,9 @@ export default function VideoPlayer({ src, title, description, poster }: VideoPl
             </div>
 
             {description && (
-                <p className="text-sm text-gray-600 mt-2 font-[family-name:var(--font-sarabun)]">
-                    {description}
-                </p>
+                <div className="mt-2">
+                    <HtmlContent content={description} className="text-sm text-gray-600" />
+                </div>
             )}
         </div>
     );

@@ -8,6 +8,7 @@ import { Loader2, Target, TrendingUp, Award, BarChart2, CheckCircle, BookOpen, U
 import { firebaseService } from "@/lib/firebaseService";
 import { FiscalYear, PATask, ChallengeData } from "@/types";
 import MathText from "@/components/MathText";
+import HtmlContent from "@/components/HtmlContent";
 
 export default function ReportChallengePage() {
     const currentYear = getCurrentFiscalYear().toString();
@@ -234,9 +235,7 @@ export default function ReportChallengePage() {
                                             ผลลัพธ์ที่เกิดขึ้นจริง
                                         </div>
                                         <div className="text-gray-700 font-[family-name:var(--font-sarabun)]">
-                                            <MathText block>
-                                                {challengeRecord?.actualResults || challengeRecord?.outcomes || "ยังไม่มีข้อมูลผลลัพธ์"}
-                                            </MathText>
+                                            <HtmlContent content={challengeRecord?.actualResults || challengeRecord?.outcomes || "ยังไม่มีข้อมูลผลลัพธ์"} />
                                         </div>
                                     </div>
                                 </div>
@@ -274,9 +273,7 @@ export default function ReportChallengePage() {
                                             ผลลัพธ์ที่เกิดขึ้นจริง
                                         </div>
                                         <div className="text-gray-700 font-[family-name:var(--font-sarabun)]">
-                                            <MathText block>
-                                                {challengeRecord?.agreement || "ยังไม่มีข้อมูลผลลัพธ์"}
-                                            </MathText>
+                                            <HtmlContent content={challengeRecord?.agreement || "ยังไม่มีข้อมูลผลลัพธ์"} />
                                         </div>
                                     </div>
                                 </div>
