@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { useState, useEffect } from "react";
 import { getCurrentFiscalYear } from "@/lib/fiscalYear";
 import { useSearchParams } from "next/navigation";
@@ -18,7 +19,7 @@ const developmentIndicators = [
     { code: "3.3", title: "นำความรู้ ความสามารถ ทักษะที่ได้จากการพัฒนาตนเองและวิชาชีพมาใช้" },
 ];
 
-export default function ReportDevelopmentPage() {
+function ReportDevelopmentContent() {
     const searchParams = useSearchParams();
     const currentYear = getCurrentFiscalYear().toString();
     const [years, setYears] = useState<string[]>([currentYear]);
@@ -192,5 +193,13 @@ export default function ReportDevelopmentPage() {
 
             <Footer />
         </div>
+    );
+}
+
+export default function ReportDevelopmentPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen flex justify-center items-center"><Loader2 className="animate-spin" size={40} /></div>}>
+            <ReportDevelopmentContent />
+        </Suspense>
     );
 }
