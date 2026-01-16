@@ -35,11 +35,7 @@ export interface DashboardStats {
     taskDetails: TaskDetail[];
 }
 
-export interface TaskDetail {
-    id: string;
-    indicatorCode: string;
-    title: string;
-    category: PACategory;
+export interface TaskDetail extends PATask {
     completeness: PACompleteness;
 }
 
@@ -136,10 +132,7 @@ export function getCategoryStats(tasks: PATask[]): CategoryStats[] {
  */
 export function getTaskDetails(tasks: PATask[]): TaskDetail[] {
     return tasks.map((task) => ({
-        id: task.id,
-        indicatorCode: task.indicatorCode,
-        title: task.title,
-        category: task.category,
+        ...task,
         completeness: calculateTaskCompleteness(task),
     }));
 }

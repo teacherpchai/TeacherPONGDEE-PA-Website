@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
     LayoutDashboard,
     ClipboardList,
@@ -18,12 +17,12 @@ import {
     ExternalLink,
 } from "lucide-react";
 import { firebaseService } from "@/lib/firebaseService";
-import { PATask, Profile, FiscalYear } from "@/types";
+import { FiscalYear, PA_CATEGORIES } from "@/types";
+import AgreementResultCard from "@/components/AgreementResultCard";
 import {
     calculateDashboardStats,
     DashboardStats,
     getCategoryEmoji,
-    formatIndicatorCode,
 } from "@/lib/dashboardUtils";
 
 // Category icon mapping
@@ -35,12 +34,9 @@ const categoryIcons = {
 };
 
 export default function DashboardPage() {
-    const router = useRouter();
     const [years, setYears] = useState<FiscalYear[]>([]);
     const [selectedYear, setSelectedYear] = useState<string>("");
-    const [tasks, setTasks] = useState<PATask[]>([]);
     const [stats, setStats] = useState<DashboardStats | null>(null);
-    const [profile, setProfile] = useState<Profile | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
     // Load years and profile on mount
@@ -60,8 +56,7 @@ export default function DashboardPage() {
                 }
 
                 // Load site settings for profile
-                const settings = await firebaseService.getSiteSettings();
-                setProfile(settings.profile);
+
             } catch (error) {
                 console.error("Failed to load initial data", error);
             }
@@ -77,7 +72,6 @@ export default function DashboardPage() {
             setIsLoading(true);
             try {
                 const records = await firebaseService.getPARecords(selectedYear);
-                setTasks(records);
                 const dashboardStats = calculateDashboardStats(records);
                 setStats(dashboardStats);
             } catch (error) {
@@ -208,95 +202,40 @@ export default function DashboardPage() {
                             </div>
                         </div>
 
-                        {/* Task Details Table */}
-                        <div className="bg-white rounded-2xl shadow-lg p-6">
-                            <div className="flex items-center justify-between mb-4">
-                                <h2 className="text-lg font-semibold text-[var(--royal-blue)] flex items-center gap-2">
-                                    📋 รายละเอียด PA Tasks
-                                </h2>
-                                <Link
-                                    href="/admin"
-                                    className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
-                                >
-                                    จัดการ PA <ExternalLink size={14} />
-                                </Link>
-                            </div>
+                        {/* Task Details - Agreement & Results Merged View */}
+                        <div className="space-y-8">
+                            {PA_CATEGORIES.map((category) => {
+                                const categoryTasks = stats.taskDetails.filter((t) => t.category === category.id);
+                                if (categoryTasks.length === 0) return null;
 
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-sm">
-                                    <thead>
-                                        <tr className="border-b bg-gray-50">
-                                            <th className="text-left py-3 px-4">รหัส</th>
-                                            <th className="text-left py-3 px-4">ชื่อ</th>
-                                            <th className="text-center py-3 px-2">งาน</th>
-                                            <th className="text-center py-3 px-2">ผลลัพธ์</th>
-                                            <th className="text-center py-3 px-2">ตัวชี้วัด</th>
-                                            <th className="text-center py-3 px-2">ผลจริง</th>
-                                            <th className="text-center py-3 px-2">หลักฐาน</th>
-                                            <th className="text-center py-3 px-4">%</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {stats.taskDetails.length === 0 ? (
-                                            <tr>
-                                                <td colSpan={8} className="text-center py-8 text-gray-500">
-                                                    ยังไม่มี PA Tasks
-                                                </td>
-                                            </tr>
-                                        ) : (
-                                            stats.taskDetails.map((task) => (
-                                                <tr
-                                                    key={task.id}
-                                                    className="border-b hover:bg-blue-50 cursor-pointer transition-colors"
-                                                    onClick={() => router.push(`/admin?year=${selectedYear}&category=${task.category}`)}
-                                                    title={`ดูรายละเอียด: ${task.title}`}
+                                return (
+                                    <div key={category.id}>
+                                        <div className="flex items-center justify-between mb-4">
+                                            <h2 className="text-xl font-bold text-[var(--royal-blue)] flex items-center gap-2 font-[family-name:var(--font-prompt)]">
+                                                {getCategoryEmoji(category.id)} {category.labelTh}
+                                            </h2>
+                                            {category.id === "learning" && (
+                                                <Link
+                                                    href="/admin"
+                                                    className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
                                                 >
-                                                    <td className="py-3 px-4 font-mono text-xs">
-                                                        {formatIndicatorCode(task.indicatorCode)}
-                                                    </td>
-                                                    <td className="py-3 px-4 max-w-[200px] truncate">
-                                                        <Link
-                                                            href={getReportUrl(task.category, selectedYear)}
-                                                            onClick={(e) => e.stopPropagation()}
-                                                            className="hover:underline hover:text-blue-600 flex items-center gap-1"
-                                                            title="คลิกเพื่อดูรายงาน"
-                                                        >
-                                                            {getCategoryEmoji(task.category)} {task.title}
-                                                        </Link>
-                                                    </td>
-                                                    <td className="text-center py-3 px-2">
-                                                        <StatusIcon ok={task.completeness.hasAgreement} />
-                                                    </td>
-                                                    <td className="text-center py-3 px-2">
-                                                        <StatusIcon ok={task.completeness.hasOutcomes} />
-                                                    </td>
-                                                    <td className="text-center py-3 px-2">
-                                                        <StatusIcon ok={task.completeness.hasIndicators} />
-                                                    </td>
-                                                    <td className="text-center py-3 px-2">
-                                                        <StatusIcon ok={task.completeness.hasActualResults} />
-                                                    </td>
-                                                    <td className="text-center py-3 px-2">
-                                                        <StatusIcon ok={task.completeness.hasEvidence} />
-                                                    </td>
-                                                    <td className="text-center py-3 px-4">
-                                                        <span
-                                                            className={`font-bold ${task.completeness.completenessScore >= 80
-                                                                ? "text-green-600"
-                                                                : task.completeness.completenessScore >= 50
-                                                                    ? "text-yellow-600"
-                                                                    : "text-red-600"
-                                                                }`}
-                                                        >
-                                                            {task.completeness.completenessScore}%
-                                                        </span>
-                                                    </td>
-                                                </tr>
-                                            ))
-                                        )}
-                                    </tbody>
-                                </table>
-                            </div>
+                                                    จัดการ PA <ExternalLink size={14} />
+                                                </Link>
+                                            )}
+                                        </div>
+
+                                        <div className="space-y-6">
+                                            {categoryTasks.map((task) => (
+                                                <AgreementResultCard
+                                                    key={task.id}
+                                                    task={task}
+                                                    year={selectedYear}
+                                                />
+                                            ))}
+                                        </div>
+                                    </div>
+                                );
+                            })}
                         </div>
                     </>
                 )}
@@ -335,40 +274,10 @@ function SummaryCard({ icon: Icon, value, label, color }: SummaryCardProps) {
     );
 }
 
-function StatusIcon({ ok }: { ok: boolean }) {
-    return ok ? (
-        <span className="text-green-500 text-lg">✅</span>
-    ) : (
-        <span className="text-gray-300 text-lg">⬜</span>
-    );
-}
-
 function getProgressColor(percent: number): string {
     if (percent >= 80) return "linear-gradient(90deg, #10b981, #059669)";
     if (percent >= 50) return "linear-gradient(90deg, #f59e0b, #d97706)";
     return "linear-gradient(90deg, #ef4444, #dc2626)";
 }
 
-function getReportUrl(category: string, year: string): string {
-    const baseUrl = "/pa-report";
-    let path = "";
 
-    switch (category) {
-        case "learning":
-            path = "learning";
-            break;
-        case "support":
-            path = "support";
-            break;
-        case "self_dev":
-            path = "development";
-            break;
-        case "challenge":
-            path = "challenge";
-            break;
-        default:
-            return "#";
-    }
-
-    return `${baseUrl}/${path}?year=${year}`;
-}
