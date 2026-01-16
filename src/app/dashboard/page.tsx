@@ -209,7 +209,11 @@ export default function DashboardPage() {
                                 if (categoryTasks.length === 0) return null;
 
                                 return (
-                                    <div key={category.id}>
+                                    <section
+                                        key={category.id}
+                                        id={category.id}
+                                        className="scroll-mt-28"
+                                    >
                                         <div className="flex items-center justify-between mb-4">
                                             <h2 className="text-xl font-bold text-[var(--royal-blue)] flex items-center gap-2 font-[family-name:var(--font-prompt)]">
                                                 {getCategoryEmoji(category.id)} {category.labelTh}
@@ -233,7 +237,7 @@ export default function DashboardPage() {
                                                 />
                                             ))}
                                         </div>
-                                    </div>
+                                    </section>
                                 );
                             })}
                         </div>

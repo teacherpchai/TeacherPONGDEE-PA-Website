@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { Menu, X, ChevronDown, User, Home, FileText, ClipboardList, BarChart3, LayoutDashboard } from "lucide-react";
+import { Menu, X, ChevronDown, User, Home, ClipboardList, LayoutDashboard } from "lucide-react";
 import { useSiteSettings } from "@/contexts/SiteSettingsContext";
 import { getCurrentFiscalYear } from "@/lib/fiscalYear";
 
@@ -24,28 +24,16 @@ interface DropdownMenu {
     items: SubMenuItem[];
 }
 
-const paAgreementMenu: DropdownMenu = {
-    id: "pa-agreement",
-    label: "ข้อตกลงการพัฒนางาน (PA)",
-    icon: FileText,
+const paCombinedMenu: DropdownMenu = {
+    id: "pa-combined",
+    label: "การประเมิน PA",
+    icon: ClipboardList,
     items: [
         { href: "/pa-agreement/workload", label: "ภาระงาน" },
-        { href: "/pa-agreement/learning", label: "ด้านการจัดการเรียนรู้" },
-        { href: "/pa-agreement/support", label: "ด้านการส่งเสริมและสนับสนุน" },
-        { href: "/pa-agreement/development", label: "ด้านการพัฒนาตนเองและวิชาชีพ" },
-        { href: "/pa-agreement/challenge", label: "ประเด็นท้าทาย" },
-    ],
-};
-
-const paReportMenu: DropdownMenu = {
-    id: "pa-report",
-    label: "รายงานผลการปฏิบัติงานฯ",
-    icon: BarChart3,
-    items: [
-        { href: "/pa-report/learning", label: "สรุปผลด้านการจัดการเรียนรู้" },
-        { href: "/pa-report/support", label: "สรุปผลด้านการส่งเสริมและสนับสนุน" },
-        { href: "/pa-report/development", label: "สรุปผลด้านการพัฒนาตนเองและวิชาชีพ" },
-        { href: "/pa-report/challenge", label: "สรุปผลประเด็นท้าทาย" },
+        { href: "/dashboard#learning", label: "ด้านที่ 1 การจัดการเรียนรู้" },
+        { href: "/dashboard#support", label: "ด้านที่ 2 การส่งเสริมและสนับสนุน" },
+        { href: "/dashboard#self_dev", label: "ด้านที่ 3 การพัฒนาตนเองฯ" },
+        { href: "/dashboard#challenge", label: "ประเด็นท้าทาย" },
         { href: "/pa-report/evidence", label: "คลังหลักฐาน" },
     ],
 };
@@ -214,11 +202,8 @@ export default function Navbar({ years, selectedYear, onYearChange }: NavbarProp
                             Dashboard
                         </Link>
 
-                        {/* PA Agreement Dropdown */}
-                        {renderDropdownMenu(paAgreementMenu)}
-
-                        {/* PA Report Dropdown */}
-                        {renderDropdownMenu(paReportMenu)}
+                        {/* PA Unified Dropdown */}
+                        {renderDropdownMenu(paCombinedMenu)}
 
                         {/* Year Selector */}
                         <div className="relative">
@@ -306,11 +291,8 @@ export default function Navbar({ years, selectedYear, onYearChange }: NavbarProp
                             Dashboard
                         </Link>
 
-                        {/* PA Agreement */}
-                        {renderMobileDropdownMenu(paAgreementMenu)}
-
-                        {/* PA Report */}
-                        {renderMobileDropdownMenu(paReportMenu)}
+                        {/* PA Unified Menu */}
+                        {renderMobileDropdownMenu(paCombinedMenu)}
 
                         {/* Year Selector */}
                         <div className="px-4 py-2">
