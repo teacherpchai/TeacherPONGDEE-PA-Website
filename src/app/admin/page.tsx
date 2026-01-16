@@ -36,24 +36,22 @@ import ChallengeForm from "@/components/ChallengeForm";
 import RichTextEditor from "@/components/RichTextEditor";
 import HtmlContent from "@/components/HtmlContent";
 
-type AdminMode = "agreement" | "report";
-
 export default function AdminDashboard() {
-    const router = useRouter();
     const { user, loading: authLoading, logout } = useAuth();
+    const router = useRouter();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const [isLoading, setIsLoading] = useState(true);
     const [years, setYears] = useState<FiscalYear[]>([]);
-    const [selectedYear, setSelectedYear] = useState<string>("");
+    const [selectedYear, setSelectedYear] = useState<string | null>(null);
     const [paRecords, setPaRecords] = useState<PATask[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [selectedCategory, setSelectedCategory] = useState<PACategory>("learning");
-    const [adminMode, setAdminMode] = useState<AdminMode>("agreement");
 
-    // Modal states
-    const [showAddYear, setShowAddYear] = useState(false);
-    const [editingIndicator, setEditingIndicator] = useState<string | null>(null);
+    // Upload state
     const [uploadingCode, setUploadingCode] = useState<string | null>(null);
+
+    // Edit state
+    const [editingIndicator, setEditingIndicator] = useState<string | null>(null);
 
     // Form states for Agreement
     const [editFormData, setEditFormData] = useState({
@@ -77,6 +75,7 @@ export default function AdminDashboard() {
 
     const [newYear, setNewYear] = useState("");
     const [isSaving, setIsSaving] = useState(false);
+    const [showAddYear, setShowAddYear] = useState(false);
 
     // Check auth on mount
     useEffect(() => {
@@ -160,91 +159,117 @@ export default function AdminDashboard() {
     // Get indicators for selected category
     const indicatorsForCategory = PA_INDICATORS.filter(i => i.category === selectedCategory);
 
-    // Start editing indicator (Agreement mode)
-    const handleStartEditAgreement = (code: string) => {
+    // --- Unified Handlers ---
+
+    // Start editing indicator (Loads all data: Agreement + Report + Challenge)
+    const handleStartEdit = (code: string) => {
         const record = getRecordForIndicator(code);
+
+        // Load Agreement Data
         setEditFormData({
             agreement: record?.agreement || "",
             outcomes: record?.outcomes || "",
             indicators: record?.indicators || "",
         });
-        setEditingIndicator(code);
-    };
 
-    // Start editing indicator (Report mode)
-    const handleStartEditReport = (code: string) => {
-        const record = getRecordForIndicator(code);
-        const viz = record?.visualization;
+        // Load Challenge Data (if applicable)
+        setChallengeFormData(record?.challengeData || null);
+
+        // Load Report Data
+        let chartData: { label: string; value: string }[] = [];
+        if (record?.visualization?.dataPoints) {
+            chartData = record.visualization.dataPoints.map(d => ({
+                label: d.label,
+                value: d.value.toString()
+            }));
+        }
+
+        let richMedia: any[] = [];
+        if (record?.richMedia) {
+            richMedia = record.richMedia.map(m => ({
+                ...m,
+                id: m.id || Date.now().toString() + Math.random().toString()
+            }));
+        }
+
         setReportFormData({
             actualResults: record?.actualResults || "",
-            chartType: viz?.chartType || "none",
-            chartTitle: viz?.chartTitle || "",
-            chartDescription: viz?.chartDescription || "",
-            chartData: viz?.dataPoints?.map(d => ({ label: d.label, value: String(d.value) })) || [],
-            richMedia: record?.richMedia?.map(m => ({
-                id: m.id,
-                type: m.type,
-                title: m.title || "",
-                description: m.description || "",
-                url: m.url,
-                youtubeId: m.youtubeId,
-            })) || [],
+            chartType: record?.visualization?.chartType || "none",
+            chartTitle: record?.visualization?.chartTitle || "",
+            chartDescription: record?.visualization?.chartDescription || "",
+            chartData: chartData,
+            richMedia: richMedia,
         });
+
         setEditingIndicator(code);
     };
 
-    // Save Agreement
-    const handleSaveAgreement = async (code: string, title: string) => {
+    // Unified Save Function (Saves everything except specific Challenge fields managed by ChallengeForm)
+    const handleSave = async (code: string, title: string) => {
+        if (!selectedYear) return;
         setIsSaving(true);
-        const existingRecord = getRecordForIndicator(code);
 
         try {
-            if (existingRecord) {
-                await firebaseService.updatePARecord(existingRecord.id, {
-                    agreement: editFormData.agreement,
-                    outcomes: editFormData.outcomes,
-                    indicators: editFormData.indicators,
-                });
+            const record = getRecordForIndicator(code);
+            const visualization = buildVisualizationData();
+            const richMedia = buildRichMediaData();
+
+            const commonFields = {
+                agreement: editFormData.agreement,
+                outcomes: editFormData.outcomes,
+                indicators: editFormData.indicators,
+                actualResults: reportFormData.actualResults,
+                visualization,
+                richMedia
+            };
+
+            if (record) {
+                // Update existing
+                await firebaseService.updatePARecord(record.id, commonFields);
             } else {
+                // Create new
                 await firebaseService.addPARecord({
                     year: selectedYear,
                     category: selectedCategory,
                     indicatorCode: code,
                     title: title,
-                    agreement: editFormData.agreement,
-                    outcomes: editFormData.outcomes,
-                    indicators: editFormData.indicators,
-                    actualResults: "",
                     evidenceFiles: [],
+                    ...commonFields
                 });
             }
-
             await fetchPARecords();
             setEditingIndicator(null);
         } catch (error) {
-            console.error("Failed to save agreement:", error);
-            alert("Failed to save agreement.");
+            console.error("Failed to save record:", error);
+            alert("Failed to save record.");
         } finally {
             setIsSaving(false);
         }
     };
 
-    // Start editing Challenge (structured form)
-    const handleStartEditChallenge = (code: string) => {
-        const record = getRecordForIndicator(code);
-        setChallengeFormData(record?.challengeData || null);
-        setEditingIndicator(code);
-    };
-
-    // Save Challenge (structured form)
-    const handleSaveChallenge = async (code: string, title: string, data: ChallengeData) => {
+    // Special Save for Challenge (combines Challenge Data + Report Data)
+    const handleSaveChallengeMerged = async (code: string, title: string, cData: ChallengeData) => {
+        if (!selectedYear) return;
         setIsSaving(true);
-        const existingRecord = getRecordForIndicator(code);
 
         try {
-            if (existingRecord) {
-                await firebaseService.updatePARecord(existingRecord.id, {
-                    challengeData: data,
+            const record = getRecordForIndicator(code);
+            const visualization = buildVisualizationData();
+            const richMedia = buildRichMediaData();
+
+            // Note: Challenge doesn't use standard agreement/outcomes/indicators fields
+            // It relies on cData and the Report section.
+
+            const reportFields = {
+                actualResults: reportFormData.actualResults,
+                visualization,
+                richMedia
+            };
+
+            if (record) {
+                await firebaseService.updatePARecord(record.id, {
+                    challengeData: cData,
+                    ...reportFields
                 });
             } else {
                 await firebaseService.addPARecord({
@@ -252,18 +277,14 @@ export default function AdminDashboard() {
                     category: selectedCategory,
                     indicatorCode: code,
                     title: title,
-                    agreement: "",
-                    outcomes: "",
-                    indicators: "",
-                    actualResults: "",
+                    agreement: "", outcomes: "", indicators: "", // Empty for challenge
                     evidenceFiles: [],
-                    challengeData: data,
+                    challengeData: cData,
+                    ...reportFields
                 });
             }
-
             await fetchPARecords();
             setEditingIndicator(null);
-            setChallengeFormData(null);
         } catch (error) {
             console.error("Failed to save challenge:", error);
             alert("Failed to save challenge.");
@@ -272,7 +293,8 @@ export default function AdminDashboard() {
         }
     };
 
-    // Build visualization data from form
+    // --- Visualization Helpers ---
+
     const buildVisualizationData = (): VisualizationData | undefined => {
         if (reportFormData.chartType === "none" || reportFormData.chartData.length === 0) {
             return undefined;
@@ -287,7 +309,6 @@ export default function AdminDashboard() {
         };
     };
 
-    // Add chart data entry
     const addChartDataEntry = () => {
         setReportFormData(prev => ({
             ...prev,
@@ -295,7 +316,6 @@ export default function AdminDashboard() {
         }));
     };
 
-    // Remove chart data entry
     const removeChartDataEntry = (index: number) => {
         setReportFormData(prev => ({
             ...prev,
@@ -303,7 +323,6 @@ export default function AdminDashboard() {
         }));
     };
 
-    // Update chart data entry
     const updateChartDataEntry = (index: number, field: "label" | "value", val: string) => {
         setReportFormData(prev => ({
             ...prev,
@@ -311,7 +330,8 @@ export default function AdminDashboard() {
         }));
     };
 
-    // Add rich media item
+    // --- Rich Media Helpers ---
+
     const addRichMediaItem = (type: "image" | "video" | "youtube") => {
         const newItem = {
             id: Date.now().toString(),
@@ -327,7 +347,6 @@ export default function AdminDashboard() {
         }));
     };
 
-    // Remove rich media item
     const removeRichMediaItem = (id: string) => {
         setReportFormData(prev => ({
             ...prev,
@@ -335,7 +354,6 @@ export default function AdminDashboard() {
         }));
     };
 
-    // Update rich media item
     const updateRichMediaItem = (id: string, field: string, value: string) => {
         setReportFormData(prev => ({
             ...prev,
@@ -350,7 +368,6 @@ export default function AdminDashboard() {
         }));
     };
 
-    // Build rich media data from form
     const buildRichMediaData = (): RichMediaItem[] | undefined => {
         const validItems = reportFormData.richMedia.filter(m => m.url);
         if (validItems.length === 0) return undefined;
@@ -365,47 +382,8 @@ export default function AdminDashboard() {
         }));
     };
 
-    // Save Report
-    const handleSaveReport = async (code: string, title: string) => {
-        setIsSaving(true);
-        const existingRecord = getRecordForIndicator(code);
-        const vizData = buildVisualizationData();
-        const richMediaData = buildRichMediaData();
+    // --- File Upload ---
 
-        try {
-            if (existingRecord) {
-                await firebaseService.updatePARecord(existingRecord.id, {
-                    actualResults: reportFormData.actualResults,
-                    visualization: vizData,
-                    richMedia: richMediaData,
-                });
-            } else {
-                await firebaseService.addPARecord({
-                    year: selectedYear,
-                    category: selectedCategory,
-                    indicatorCode: code,
-                    title: title,
-                    agreement: "",
-                    outcomes: "",
-                    indicators: "",
-                    actualResults: reportFormData.actualResults,
-                    evidenceFiles: [],
-                    visualization: vizData,
-                    richMedia: richMediaData,
-                });
-            }
-
-            await fetchPARecords();
-            setEditingIndicator(null);
-        } catch (error) {
-            console.error("Failed to save report:", error);
-            alert("Failed to save report.");
-        } finally {
-            setIsSaving(false);
-        }
-    };
-
-    // Handle file upload
     const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, code: string, title: string) => {
         const files = event.target.files;
         if (!files || files.length === 0) return;
@@ -416,10 +394,8 @@ export default function AdminDashboard() {
             let record = getRecordForIndicator(code);
 
             if (!record) {
-                // Determine category if not explicitly needed (optional, just safety)
-                // Actually we already have selectedCategory and code.
                 const newId = await firebaseService.addPARecord({
-                    year: selectedYear,
+                    year: selectedYear!,
                     category: selectedCategory,
                     indicatorCode: code,
                     title: title,
@@ -432,27 +408,22 @@ export default function AdminDashboard() {
 
                 if (newId) {
                     await fetchPARecords(); // Refresh to get the new record
-                    // Since React state update depends on await, we fetch again here
-                    // But we can't easily rely on 'record' variable being updated in same closure
-                    // So we refetch and find
-                    // To be safe, we have to fetch again.
-                    const updatedRecords = await firebaseService.getPARecords(selectedYear);
+                    // Ideally we should wait for state update but we can refetch directly
+                    const updatedRecords = await firebaseService.getPARecords(selectedYear!);
                     record = updatedRecords.find(r => r.indicatorCode === code);
-                    setPaRecords(updatedRecords); // Should be consistent
+                    setPaRecords(updatedRecords);
                 }
             }
 
             if (!record) {
-                // If still no record (creation failed), abort
                 setUploadingCode(null);
                 return;
             }
 
-            // At this point we have a record ID
             const uploadedFiles: EvidenceFile[] = [...(record.evidenceFiles || [])];
 
             for (const file of Array.from(files)) {
-                const evidenceFile = await firebaseService.uploadEvidenceFile(file, selectedYear, record.id);
+                const evidenceFile = await firebaseService.uploadEvidenceFile(file, selectedYear!, record.id);
                 if (evidenceFile) {
                     uploadedFiles.push(evidenceFile);
                 }
@@ -472,22 +443,158 @@ export default function AdminDashboard() {
         }
     };
 
-    // Stats for category
-    const getCategoryStats = (category: PACategory, mode: AdminMode) => {
-        const indicators = PA_INDICATORS.filter(i => i.category === category);
-        const filledCount = indicators.filter(i => {
-            const record = getRecordForIndicator(i.code);
-            if (mode === "agreement") {
-                // Challenge category uses challengeData, others use agreement
-                if (category === "challenge") {
-                    return !!record?.challengeData?.titleTH;
-                }
-                return !!record?.agreement;
-            }
-            return !!record?.actualResults;
-        }).length;
-        return { total: indicators.length, filled: filledCount };
-    };
+    // NEW: Render Report Configuration (Visualization + Rich Media)
+    const renderReportConfigFields = () => (
+        <>
+            {/* Chart Configuration */}
+            <div className="border-t pt-4">
+                <h4 className="text-sm font-semibold mb-3" style={{ color: "var(--royal-blue)" }}>
+                    📊 Data Visualization (ไม่จำเป็น)
+                </h4>
+
+                <div className="grid grid-cols-2 gap-3 mb-3">
+                    <div>
+                        <label className="text-xs text-gray-500 block mb-1">ประเภท Chart</label>
+                        <select
+                            value={reportFormData.chartType}
+                            onChange={(e) => setReportFormData(prev => ({ ...prev, chartType: e.target.value as "bar" | "pie" | "progress" | "none" }))}
+                            className="w-full px-3 py-2 rounded-lg border text-sm"
+                        >
+                            <option value="none">ไม่แสดง Chart</option>
+                            <option value="progress">Progress Bars</option>
+                            <option value="bar">Bar Chart</option>
+                            <option value="pie">Pie Chart</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label className="text-xs text-gray-500 block mb-1">หัวข้อ Chart</label>
+                        <input
+                            type="text"
+                            value={reportFormData.chartTitle}
+                            onChange={(e) => setReportFormData(prev => ({ ...prev, chartTitle: e.target.value }))}
+                            placeholder="เช่น ผลสัมฤทธิ์ทางการเรียน"
+                            className="w-full px-3 py-2 rounded-lg border text-sm"
+                            disabled={reportFormData.chartType === "none"}
+                        />
+                    </div>
+                </div>
+
+                {reportFormData.chartType !== "none" && (
+                    <div className="mb-4">
+                        <label className="text-xs text-gray-500 block mb-1">คำอธิบายใต้กราฟ</label>
+                        <RichTextEditor
+                            value={reportFormData.chartDescription}
+                            onChange={(html) => setReportFormData(prev => ({ ...prev, chartDescription: html }))}
+                            placeholder="คำอธิบายเพิ่มเติมเกี่ยวกับกราฟ..."
+                            minHeight="100px"
+                        />
+                    </div>
+                )}
+
+                {reportFormData.chartType !== "none" && (
+                    <div className="space-y-2">
+                        <label className="text-xs text-gray-500 block">ข้อมูล (Label + ค่า)</label>
+                        {reportFormData.chartData.map((entry, index) => (
+                            <div key={index} className="flex gap-2">
+                                <input
+                                    type="text"
+                                    value={entry.label}
+                                    onChange={(e) => updateChartDataEntry(index, "label", e.target.value)}
+                                    placeholder="Label"
+                                    className="flex-1 px-3 py-1.5 rounded border text-sm"
+                                />
+                                <input
+                                    type="number"
+                                    value={entry.value}
+                                    onChange={(e) => updateChartDataEntry(index, "value", e.target.value)}
+                                    placeholder="Value"
+                                    className="w-24 px-3 py-1.5 rounded border text-sm"
+                                />
+                                <button onClick={() => removeChartDataEntry(index)} className="text-red-500 p-1">
+                                    <X size={16} />
+                                </button>
+                            </div>
+                        ))}
+                        <button
+                            onClick={addChartDataEntry}
+                            className="text-xs text-blue-600 flex items-center gap-1 hover:underline"
+                        >
+                            <Plus size={14} /> เพิ่มข้อมูล
+                        </button>
+                    </div>
+                )}
+            </div>
+
+            {/* Rich Media Config */}
+            <div className="border-t pt-4 mt-4">
+                <h4 className="text-sm font-semibold mb-3 flex items-center gap-2" style={{ color: "var(--royal-blue)" }}>
+                    <Upload size={16} /> Rich Media (รูปภาพ/วิดีโอ)
+                </h4>
+
+                <div className="space-y-4">
+                    {reportFormData.richMedia.map((media) => (
+                        <div key={media.id} className="p-3 border rounded-lg bg-gray-50 relative">
+                            <button
+                                onClick={() => removeRichMediaItem(media.id)}
+                                className="absolute top-2 right-2 text-gray-400 hover:text-red-500"
+                            >
+                                <X size={16} />
+                            </button>
+                            <div className="grid gap-3">
+                                <div>
+                                    <label className="text-xs text-gray-500 block mb-1">ประเภท</label>
+                                    <select
+                                        value={media.type}
+                                        onChange={(e) => updateRichMediaItem(media.id, "type", e.target.value)}
+                                        className="w-full px-3 py-1.5 rounded border text-sm"
+                                    >
+                                        <option value="image">รูปภาพ (URL)</option>
+                                        <option value="video">วิดีโอ (URL)</option>
+                                        <option value="youtube">YouTube</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="text-xs text-gray-500 block mb-1">URL</label>
+                                    <input
+                                        type="text"
+                                        value={media.url}
+                                        onChange={(e) => updateRichMediaItem(media.id, "url", e.target.value)}
+                                        placeholder={media.type === 'youtube' ? 'YouTube URL' : 'Image/Video URL'}
+                                        className="w-full px-3 py-1.5 rounded border text-sm"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-xs text-gray-500 block mb-1">คำบรรยาย</label>
+                                    <input
+                                        type="text"
+                                        value={media.description}
+                                        onChange={(e) => updateRichMediaItem(media.id, "description", e.target.value)}
+                                        placeholder="คำบรรยายสั้นๆ"
+                                        className="w-full px-3 py-1.5 rounded border text-sm"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => addRichMediaItem("image")}
+                            className="text-xs bg-white border px-3 py-1.5 rounded hover:bg-gray-50 flex items-center gap-1"
+                        >
+                            <Plus size={14} /> เพิ่มรูปภาพ
+                        </button>
+                        <button
+                            onClick={() => addRichMediaItem("youtube")}
+                            className="text-xs bg-white border px-3 py-1.5 rounded hover:bg-gray-50 flex items-center gap-1"
+                        >
+                            <Plus size={14} /> เพิ่ม YouTube
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </>
+    );
 
     if (authLoading || isLoading) {
         return (
@@ -573,56 +680,37 @@ export default function AdminDashboard() {
                     </div>
                 </section>
 
-                {/* Main Admin Mode Toggle */}
-                {selectedYear && (
-                    <section className="mb-6">
-                        <div className="flex gap-2 bg-white rounded-xl p-2 shadow-sm">
-                            <button
-                                onClick={() => setAdminMode("agreement")}
-                                className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg text-sm font-medium transition-all font-[family-name:var(--font-sarabun)] ${adminMode === "agreement"
-                                    ? "bg-[var(--royal-blue)] text-white"
-                                    : "hover:bg-gray-100"
-                                    }`}
-                            >
-                                <ClipboardList size={18} />
-                                ข้อตกลง PA
-                            </button>
-                            <button
-                                onClick={() => setAdminMode("report")}
-                                className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg text-sm font-medium transition-all font-[family-name:var(--font-sarabun)] ${adminMode === "report"
-                                    ? "bg-[var(--gold)] text-[var(--royal-blue-dark)]"
-                                    : "hover:bg-gray-100"
-                                    }`}
-                            >
-                                <BarChart3 size={18} />
-                                รายงานผลการปฏิบัติงาน
-                            </button>
-                        </div>
-                    </section>
-                )}
-
                 {/* PA Records Management */}
                 {selectedYear && (
                     <section className="bg-white rounded-2xl shadow-sm p-6">
                         <div className="flex items-center justify-between mb-6">
-                            <h2 className="text-xl font-semibold font-[family-name:var(--font-prompt)]" style={{ color: adminMode === "agreement" ? "var(--royal-blue)" : "var(--gold)" }}>
+                            <h2 className="text-xl font-semibold font-[family-name:var(--font-prompt)]" style={{ color: "var(--royal-blue)" }}>
                                 <FileText size={20} className="inline mr-2" />
-                                {adminMode === "agreement" ? "ข้อตกลง PA" : "รายงานผลการปฏิบัติงาน"} - ปี {selectedYear}
+                                จัดการข้อมูล PA - ปี {selectedYear}
                             </h2>
                         </div>
 
-                        {/* Category Tabs with Stats */}
+                        {/* Category Tabs */}
                         <div className="flex overflow-x-auto gap-2 mb-6 pb-2">
                             {PA_CATEGORIES.map((cat) => {
-                                const stats = getCategoryStats(cat.id, adminMode);
+                                // Simple stats: count total vs filled
+                                // We check if there's any data (agreement or report)
+                                const total = PA_INDICATORS.filter(i => i.category === cat.id).length;
+                                const filled = PA_INDICATORS.filter(i => i.category === cat.id).filter(i => {
+                                    const r = paRecords.find(r => r.indicatorCode === i.code);
+                                    if (!r) return false;
+                                    // For challenge: check challengeData
+                                    if (cat.id === "challenge") return !!r.challengeData;
+                                    // For others: check agreement or actualResults
+                                    return !!r.agreement || !!r.actualResults;
+                                }).length;
+
                                 return (
                                     <button
                                         key={cat.id}
                                         onClick={() => setSelectedCategory(cat.id)}
                                         className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all font-[family-name:var(--font-sarabun)] flex items-center gap-2 ${selectedCategory === cat.id
-                                            ? adminMode === "agreement"
-                                                ? "bg-[var(--royal-blue)] text-white"
-                                                : "bg-[var(--gold)] text-[var(--royal-blue-dark)]"
+                                            ? "bg-[var(--royal-blue)] text-white"
                                             : "bg-gray-100 hover:bg-gray-200"
                                             }`}
                                         style={selectedCategory !== cat.id ? { color: "var(--foreground)" } : {}}
@@ -630,7 +718,7 @@ export default function AdminDashboard() {
                                         {cat.labelTh}
                                         <span className={`text-xs px-1.5 py-0.5 rounded-full ${selectedCategory === cat.id ? "bg-white/20" : "bg-gray-200"
                                             }`}>
-                                            {stats.filled}/{stats.total}
+                                            {filled}/{total}
                                         </span>
                                     </button>
                                 );
@@ -643,7 +731,9 @@ export default function AdminDashboard() {
                                 const record = getRecordForIndicator(indicator.code);
                                 const hasAgreement = !!record?.agreement;
                                 const hasReport = !!record?.actualResults;
-                                const hasData = adminMode === "agreement" ? hasAgreement : hasReport;
+                                const hasChallenge = !!record?.challengeData;
+                                const hasData = selectedCategory === "challenge" ? hasChallenge : (hasAgreement || hasReport);
+
                                 const isEditing = editingIndicator === indicator.code;
 
                                 return (
@@ -651,15 +741,15 @@ export default function AdminDashboard() {
                                         key={indicator.code}
                                         className="border rounded-xl p-4 transition-all"
                                         style={{
-                                            borderColor: hasData ? (adminMode === "agreement" ? "var(--royal-blue)" : "var(--gold)") : "var(--background-secondary)",
+                                            borderColor: hasData ? "var(--royal-blue)" : "var(--background-secondary)",
                                             backgroundColor: isEditing ? "var(--background-secondary)" : "white"
                                         }}
                                     >
                                         {isEditing ? (
-                                            // Edit Mode
+                                            // Unified Edit Mode
                                             <div className="space-y-4">
                                                 <div className="flex items-center gap-3">
-                                                    <span className="px-2 py-1 rounded text-sm font-semibold" style={{ backgroundColor: adminMode === "agreement" ? "var(--royal-blue)" : "var(--gold)", color: adminMode === "agreement" ? "white" : "var(--royal-blue-dark)" }}>
+                                                    <span className="px-2 py-1 rounded text-sm font-semibold bg-[var(--royal-blue)] text-white">
                                                         {indicator.code}
                                                     </span>
                                                     <h3 className="font-medium font-[family-name:var(--font-sarabun)]">
@@ -667,59 +757,94 @@ export default function AdminDashboard() {
                                                     </h3>
                                                 </div>
 
-                                                {adminMode === "agreement" ? (
-                                                    // Agreement Form - differentiate between challenge and other categories
-                                                    selectedCategory === "challenge" ? (
-                                                        // Challenge uses ChallengeForm
+                                                {/* PLAN SECTION */}
+                                                <div className="bg-white p-4 rounded-lg border border-blue-100">
+                                                    <div className="mb-4 flex items-center gap-2 pb-2 border-b border-blue-50">
+                                                        <span className="text-xs font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                                                            Plan (ข้อตกลง)
+                                                        </span>
+                                                    </div>
+
+                                                    {selectedCategory === "challenge" ? (
                                                         <ChallengeForm
                                                             challengeNumber={indicator.code === "challenge-1" ? 1 : 2}
                                                             initialData={challengeFormData || undefined}
                                                             onSave={async (data) => {
-                                                                await handleSaveChallenge(indicator.code, indicator.title, data);
+                                                                // Note: We don't save immediately here, we want to save purely on main save.
+                                                                // BUT ChallengeForm was designed to self-save? 
+                                                                // Ideally, we lift state up.
+                                                                // For now, let's keep ChallengeForm expecting onSave but we hijack it to just update local state if we could.
+                                                                // Since ChallengeForm calls onSave with data, we might need to change how we use it.
+                                                                // Actually, let's just use the merged handler to save everything when they click Save in ChallengeForm?
+                                                                // Or better, let's allow ChallengeForm to call the merged save.
+                                                                await handleSaveChallengeMerged(indicator.code, indicator.title, data);
+                                                                // Note: This will save Report Data too! So we must ensure reportFormData is up to date.
+                                                                // It is, because we loaded it.
                                                             }}
                                                             onCancel={() => setEditingIndicator(null)}
                                                             isSaving={isSaving}
+                                                        // We might want to hide the save button in ChallengeForm if we want a unified save button at bottom?
+                                                        // But your request asked to "present both sections".
+                                                        // If ChallengeForm excludes separate Report fields, we display Report fields BELOW it.
+                                                        // ChallengeForm includes its own Save button. 
+                                                        // Let's render Custom Actions or hide default actions if supported.
+                                                        // ChallengeForm currently has buttons.
+                                                        // For now, we will render Report Section BELOW ChallengeForm,
+                                                        // AND we will likely need the user to click Save in ChallengeForm to save EVERYTHING.
+                                                        // Or we can modify ChallengeForm to be controlled.
+                                                        // Assuming ChallengeForm works as specific independent form, we can just let it be.
+                                                        // BUT ensuring Report Data is ALSO saved is key.
+                                                        // I created handleSaveChallengeMerged for this.
                                                         />
                                                     ) : (
-                                                        // Other categories use standard form
                                                         <>
-                                                            <div>
-                                                                <label className="text-sm font-medium mb-2 block" style={{ color: "var(--foreground-muted)" }}>
-                                                                    ข้อตกลง PA (สิ่งที่จะทำ)
-                                                                </label>
-                                                                <RichTextEditor
-                                                                    value={editFormData.agreement}
-                                                                    onChange={(html) => setEditFormData({ ...editFormData, agreement: html })}
-                                                                    placeholder="ระบุข้อตกลงในการพัฒนางาน..."
-                                                                    minHeight="100px"
-                                                                />
-                                                            </div>
-                                                            <div>
-                                                                <label className="text-sm font-medium mb-2 block" style={{ color: "var(--foreground-muted)" }}>
-                                                                    ผลลัพธ์ที่คาดหวัง
-                                                                </label>
-                                                                <RichTextEditor
-                                                                    value={editFormData.outcomes}
-                                                                    onChange={(html) => setEditFormData({ ...editFormData, outcomes: html })}
-                                                                    placeholder="ระบุผลลัพธ์ที่คาดหวังให้เกิดขึ้นกับผู้เรียน..."
-                                                                    minHeight="80px"
-                                                                />
-                                                            </div>
-                                                            <div>
-                                                                <label className="text-sm font-medium mb-2 block" style={{ color: "var(--foreground-muted)" }}>
-                                                                    ตัวชี้วัดความสำเร็จ
-                                                                </label>
-                                                                <RichTextEditor
-                                                                    value={editFormData.indicators}
-                                                                    onChange={(html) => setEditFormData({ ...editFormData, indicators: html })}
-                                                                    placeholder="ระบุตัวชี้วัดที่แสดงถึงการเปลี่ยนแปลง..."
-                                                                    minHeight="80px"
-                                                                />
+                                                            <div className="space-y-4">
+                                                                <div>
+                                                                    <label className="text-sm font-medium mb-2 block" style={{ color: "var(--foreground-muted)" }}>
+                                                                        ข้อตกลง PA (สิ่งที่จะทำ)
+                                                                    </label>
+                                                                    <RichTextEditor
+                                                                        value={editFormData.agreement}
+                                                                        onChange={(html) => setEditFormData({ ...editFormData, agreement: html })}
+                                                                        placeholder="ระบุข้อตกลงในการพัฒนางาน..."
+                                                                        minHeight="100px"
+                                                                    />
+                                                                </div>
+                                                                <div>
+                                                                    <label className="text-sm font-medium mb-2 block" style={{ color: "var(--foreground-muted)" }}>
+                                                                        ผลลัพธ์ที่คาดหวัง
+                                                                    </label>
+                                                                    <RichTextEditor
+                                                                        value={editFormData.outcomes}
+                                                                        onChange={(html) => setEditFormData({ ...editFormData, outcomes: html })}
+                                                                        placeholder="ระบุผลลัพธ์ที่คาดหวัง..."
+                                                                        minHeight="80px"
+                                                                    />
+                                                                </div>
+                                                                <div>
+                                                                    <label className="text-sm font-medium mb-2 block" style={{ color: "var(--foreground-muted)" }}>
+                                                                        ตัวชี้วัดความสำเร็จ
+                                                                    </label>
+                                                                    <RichTextEditor
+                                                                        value={editFormData.indicators}
+                                                                        onChange={(html) => setEditFormData({ ...editFormData, indicators: html })}
+                                                                        placeholder="ระบุตัวชี้วัดความสำเร็จ..."
+                                                                        minHeight="80px"
+                                                                    />
+                                                                </div>
                                                             </div>
                                                         </>
-                                                    )
-                                                ) : (
-                                                    // Report Form
+                                                    )}
+                                                </div>
+
+                                                {/* REPORT SECTION (Displayed for both Standard and Challenge) */}
+                                                <div className="bg-white p-4 rounded-lg border border-green-100">
+                                                    <div className="mb-4 flex items-center gap-2 pb-2 border-b border-green-50">
+                                                        <span className="text-xs font-bold uppercase tracking-wider text-green-600 bg-green-50 px-2 py-1 rounded">
+                                                            Report (ผลการปฏิบัติงาน)
+                                                        </span>
+                                                    </div>
+
                                                     <div className="space-y-4">
                                                         <div>
                                                             <label className="text-sm font-medium mb-2 block" style={{ color: "var(--foreground-muted)" }}>
@@ -728,274 +853,97 @@ export default function AdminDashboard() {
                                                             <RichTextEditor
                                                                 value={reportFormData.actualResults}
                                                                 onChange={(html) => setReportFormData(prev => ({ ...prev, actualResults: html }))}
-                                                                placeholder="ระบุผลการดำเนินงานตามข้อตกลง..."
+                                                                placeholder="ระบุผลการดำเนินงาน..."
                                                                 minHeight="150px"
                                                             />
                                                         </div>
 
-                                                        {/* Description removed from here */}
+                                                        {/* Config Fields (Charts + Media) */}
+                                                        {renderReportConfigFields()}
+                                                    </div>
+                                                </div>
 
-                                                        {record?.agreement && (
-                                                            <div className="p-3 rounded-lg bg-blue-50 text-sm">
-                                                                <strong className="text-blue-700">ข้อตกลงที่ระบุไว้:</strong>
-                                                                <div className="text-blue-600 mt-1">
-                                                                    <HtmlContent content={record.agreement} />
-                                                                </div>
-                                                            </div>
-                                                        )}
-
-                                                        {/* Chart Configuration */}
-                                                        <div className="border-t pt-4">
-                                                            <h4 className="text-sm font-semibold mb-3" style={{ color: "var(--royal-blue)" }}>
-                                                                📊 Data Visualization (ไม่จำเป็น)
-                                                            </h4>
-
-                                                            <div className="grid grid-cols-2 gap-3 mb-3">
-                                                                <div>
-                                                                    <label className="text-xs text-gray-500 block mb-1">ประเภท Chart</label>
-                                                                    <select
-                                                                        value={reportFormData.chartType}
-                                                                        onChange={(e) => setReportFormData(prev => ({ ...prev, chartType: e.target.value as "bar" | "pie" | "progress" | "none" }))}
-                                                                        className="w-full px-3 py-2 rounded-lg border text-sm"
-                                                                    >
-                                                                        <option value="none">ไม่แสดง Chart</option>
-                                                                        <option value="progress">Progress Bars</option>
-                                                                        <option value="bar">Bar Chart</option>
-                                                                        <option value="pie">Pie Chart</option>
-                                                                    </select>
-                                                                </div>
-                                                                <div>
-                                                                    <label className="text-xs text-gray-500 block mb-1">หัวข้อ Chart</label>
-                                                                    <input
-                                                                        type="text"
-                                                                        value={reportFormData.chartTitle}
-                                                                        onChange={(e) => setReportFormData(prev => ({ ...prev, chartTitle: e.target.value }))}
-                                                                        placeholder="เช่น ผลสัมฤทธิ์ทางการเรียน"
-                                                                        className="w-full px-3 py-2 rounded-lg border text-sm"
-                                                                        disabled={reportFormData.chartType === "none"}
-                                                                    />
-                                                                </div>
-                                                            </div>
-
-                                                            {reportFormData.chartType !== "none" && (
-                                                                <div className="mb-4">
-                                                                    <label className="text-xs text-gray-500 block mb-1">คำอธิบายใต้กราฟ</label>
-                                                                    <RichTextEditor
-                                                                        value={reportFormData.chartDescription}
-                                                                        onChange={(html) => setReportFormData(prev => ({ ...prev, chartDescription: html }))}
-                                                                        placeholder="คำอธิบายเพิ่มเติมเกี่ยวกับกราฟ..."
-                                                                        minHeight="100px"
-                                                                    />
-                                                                </div>
-                                                            )}
-
-                                                            {reportFormData.chartType !== "none" && (
-                                                                <div className="space-y-2">
-                                                                    <label className="text-xs text-gray-500 block">ข้อมูล (Label + ค่า)</label>
-                                                                    {reportFormData.chartData.map((entry, index) => (
-                                                                        <div key={index} className="flex gap-2">
-                                                                            <input
-                                                                                type="text"
-                                                                                value={entry.label}
-                                                                                onChange={(e) => updateChartDataEntry(index, "label", e.target.value)}
-                                                                                placeholder="Label เช่น O-NET คณิต"
-                                                                                className="flex-1 px-3 py-2 rounded-lg border text-sm"
-                                                                            />
-                                                                            <input
-                                                                                type="number"
-                                                                                value={entry.value}
-                                                                                onChange={(e) => updateChartDataEntry(index, "value", e.target.value)}
-                                                                                placeholder="ค่า"
-                                                                                className="w-24 px-3 py-2 rounded-lg border text-sm"
-                                                                            />
-                                                                            <button
-                                                                                type="button"
-                                                                                onClick={() => removeChartDataEntry(index)}
-                                                                                className="px-2 py-1 text-red-500 hover:bg-red-50 rounded"
-                                                                            >
-                                                                                ✕
-                                                                            </button>
-                                                                        </div>
-                                                                    ))}
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={addChartDataEntry}
-                                                                        className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
-                                                                    >
-                                                                        + เพิ่มข้อมูล
-                                                                    </button>
-                                                                </div>
-                                                            )}
-                                                        </div>
-
-                                                        {/* Rich Media Section */}
-                                                        <div className="border-t pt-4">
-                                                            <h4 className="text-sm font-semibold mb-3 text-[var(--royal-blue)]">
-                                                                🖼️ สื่อประกอบ (ไม่จำเป็น)
-                                                            </h4>
-
-                                                            <div className="flex gap-2 mb-3 flex-wrap">
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => addRichMediaItem("image")}
-                                                                    className="text-xs px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100"
-                                                                >
-                                                                    + รูปภาพ
-                                                                </button>
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => addRichMediaItem("youtube")}
-                                                                    className="text-xs px-3 py-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100"
-                                                                >
-                                                                    + YouTube
-                                                                </button>
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => addRichMediaItem("video")}
-                                                                    className="text-xs px-3 py-1.5 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100"
-                                                                >
-                                                                    + วิดีโอ
-                                                                </button>
-                                                            </div>
-
-                                                            {reportFormData.richMedia.length > 0 && (
-                                                                <div className="space-y-3">
-                                                                    {reportFormData.richMedia.map((item) => (
-                                                                        <div key={item.id} className="flex gap-2 items-start p-3 bg-gray-50 rounded-lg">
-                                                                            <span className="text-lg">
-                                                                                {item.type === "image" ? "🖼️" : item.type === "youtube" ? "▶️" : "🎬"}
-                                                                            </span>
-                                                                            <div className="flex-1 space-y-2">
-                                                                                <input
-                                                                                    type="text"
-                                                                                    value={item.title}
-                                                                                    onChange={(e) => updateRichMediaItem(item.id, "title", e.target.value)}
-                                                                                    placeholder="หัวข้อ (ไม่จำเป็น)"
-                                                                                    className="w-full px-3 py-1.5 rounded border text-sm"
-                                                                                />
-                                                                                <div className="border rounded-md overflow-hidden">
-                                                                                    <RichTextEditor
-                                                                                        value={item.description}
-                                                                                        onChange={(html) => updateRichMediaItem(item.id, "description", html)}
-                                                                                        placeholder="คำอธิบายใต้ภาพ/วิดีโอ..."
-                                                                                        minHeight="80px"
-                                                                                    />
-                                                                                </div>
-                                                                                <input
-                                                                                    type="text"
-                                                                                    value={item.url}
-                                                                                    onChange={(e) => updateRichMediaItem(item.id, "url", e.target.value)}
-                                                                                    placeholder={
-                                                                                        item.type === "youtube"
-                                                                                            ? "YouTube URL เช่น https://youtu.be/..."
-                                                                                            : "URL ของไฟล์"
-                                                                                    }
-                                                                                    className="w-full px-3 py-1.5 rounded border text-sm"
-                                                                                />
-                                                                                {item.type === "youtube" && item.youtubeId && (
-                                                                                    <p className="text-xs text-green-600">✓ YouTube ID: {item.youtubeId}</p>
-                                                                                )}
-                                                                            </div>
-                                                                            <button
-                                                                                type="button"
-                                                                                onClick={() => removeRichMediaItem(item.id)}
-                                                                                className="px-2 py-1 text-red-500 hover:bg-red-50 rounded"
-                                                                                title="ลบ"
-                                                                            >
-                                                                                ✕
-                                                                            </button>
-                                                                        </div>
-                                                                    ))}
-                                                                </div>
-                                                            )}
-                                                        </div>
+                                                {selectedCategory !== "challenge" && (
+                                                    <div className="flex gap-2 pt-2">
+                                                        <button
+                                                            onClick={() => handleSave(indicator.code, indicator.title)}
+                                                            disabled={isSaving}
+                                                            className="flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-medium btn-royal disabled:opacity-50 min-w-[120px] justify-center"
+                                                        >
+                                                            {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+                                                            บันทึกทั้งหมด
+                                                        </button>
+                                                        <button
+                                                            onClick={() => setEditingIndicator(null)}
+                                                            className="flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-medium bg-gray-100 hover:bg-gray-200"
+                                                        >
+                                                            <X size={16} />
+                                                            ยกเลิก
+                                                        </button>
                                                     </div>
                                                 )}
 
-                                                <div className="flex gap-2">
-                                                    <button
-                                                        onClick={() => adminMode === "agreement"
-                                                            ? handleSaveAgreement(indicator.code, indicator.title)
-                                                            : handleSaveReport(indicator.code, indicator.title)
-                                                        }
-                                                        disabled={isSaving}
-                                                        className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium btn-royal disabled:opacity-50"
-                                                    >
-                                                        {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-                                                        บันทึก
-                                                    </button>
-                                                    <button
-                                                        onClick={() => setEditingIndicator(null)}
-                                                        className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 hover:bg-gray-200"
-                                                    >
-                                                        <X size={16} />
-                                                        ยกเลิก
-                                                    </button>
-                                                </div>
                                             </div>
                                         ) : (
                                             // View Mode
                                             <div className="flex items-center justify-between">
                                                 <div className="flex items-center gap-3 flex-1">
                                                     {hasData ? (
-                                                        <CheckCircle2 size={20} style={{ color: adminMode === "agreement" ? "var(--royal-blue)" : "var(--gold)" }} />
+                                                        <CheckCircle2 size={20} className="text-[var(--royal-blue)]" />
                                                     ) : (
-                                                        <Circle size={20} style={{ color: "var(--foreground-muted)" }} />
+                                                        <Circle size={20} className="text-gray-300" />
                                                     )}
                                                     <span
-                                                        className="px-2 py-1 rounded text-sm font-semibold font-[family-name:var(--font-prompt)]"
-                                                        style={{ backgroundColor: "var(--background-secondary)", color: "var(--royal-blue)" }}
+                                                        className="px-2 py-1 rounded text-sm font-semibold font-[family-name:var(--font-prompt)] bg-gray-100 text-[var(--royal-blue)]"
                                                     >
                                                         {indicator.code}
                                                     </span>
                                                     <div className="flex-1">
-                                                        <h3 className="font-medium font-[family-name:var(--font-sarabun)]" style={{ color: "var(--foreground)" }}>
+                                                        <h3 className="font-medium font-[family-name:var(--font-sarabun)] text-gray-900">
                                                             {indicator.title}
                                                         </h3>
-                                                        {/* Fix: Render as HTML using HtmlContent */}
-                                                        {adminMode === "agreement" && record?.agreement && (
-                                                            <div className="mt-1">
-                                                                <HtmlContent content={record.agreement} className="text-sm text-gray-500 line-clamp-2" />
+                                                        {/* Summaries */}
+                                                        {record?.agreement && (
+                                                            <div className="mt-1 flex items-start gap-1">
+                                                                <span className="text-[10px] uppercase font-bold text-blue-600 bg-blue-50 px-1 rounded">Plan</span>
+                                                                <HtmlContent content={record.agreement} className="text-sm text-gray-500 line-clamp-1" />
                                                             </div>
                                                         )}
-                                                        {adminMode === "report" && record?.actualResults && (
-                                                            <div className="mt-1">
-                                                                <HtmlContent content={record.actualResults} className="text-sm text-gray-500 line-clamp-2" />
+                                                        {record?.actualResults && (
+                                                            <div className="mt-1 flex items-start gap-1">
+                                                                <span className="text-[10px] uppercase font-bold text-green-600 bg-green-50 px-1 rounded">Done</span>
+                                                                <HtmlContent content={record.actualResults} className="text-sm text-gray-500 line-clamp-1" />
+                                                            </div>
+                                                        )}
+                                                        {record?.challengeData && selectedCategory === "challenge" && (
+                                                            <div className="mt-1 flex items-start gap-1">
+                                                                <span className="text-[10px] uppercase font-bold text-purple-600 bg-purple-50 px-1 rounded">Challenge</span>
+                                                                <span className="text-sm text-gray-500 line-clamp-1">{record.challengeData.titleTH}</span>
                                                             </div>
                                                         )}
                                                     </div>
                                                 </div>
                                                 <div className="flex gap-2 flex-shrink-0 ml-4">
-                                                    {adminMode === "report" && (
-                                                        <label className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-green-100 text-green-700 cursor-pointer hover:bg-green-200 transition-colors">
-                                                            {uploadingCode === indicator.code ? (
-                                                                <Loader2 size={14} className="animate-spin" />
-                                                            ) : (
-                                                                <Upload size={14} />
-                                                            )}
-                                                            {record?.evidenceFiles?.length || 0} ไฟล์
-                                                            <input
-                                                                ref={fileInputRef}
-                                                                type="file"
-                                                                multiple
-                                                                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.mp4"
-                                                                className="hidden"
-                                                                onChange={(e) => handleFileUpload(e, indicator.code, indicator.title)}
-                                                            />
-                                                        </label>
-                                                    )}
+                                                    {/* Upload Button */}
+                                                    <label className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-green-100 text-green-700 cursor-pointer hover:bg-green-200 transition-colors">
+                                                        {uploadingCode === indicator.code ? (
+                                                            <Loader2 size={14} className="animate-spin" />
+                                                        ) : (
+                                                            <Upload size={14} />
+                                                        )}
+                                                        {record?.evidenceFiles?.length || 0} ไฟล์
+                                                        <input
+                                                            ref={fileInputRef}
+                                                            type="file"
+                                                            multiple
+                                                            accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.mp4"
+                                                            className="hidden"
+                                                            onChange={(e) => handleFileUpload(e, indicator.code, indicator.title)}
+                                                        />
+                                                    </label>
+
                                                     <button
-                                                        onClick={() => {
-                                                            if (adminMode === "agreement") {
-                                                                if (selectedCategory === "challenge") {
-                                                                    handleStartEditChallenge(indicator.code);
-                                                                } else {
-                                                                    handleStartEditAgreement(indicator.code);
-                                                                }
-                                                            } else {
-                                                                handleStartEditReport(indicator.code);
-                                                            }
-                                                        }}
+                                                        onClick={() => handleStartEdit(indicator.code)}
                                                         className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors"
                                                     >
                                                         <Edit3 size={14} />

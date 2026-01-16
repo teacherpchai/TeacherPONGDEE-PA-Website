@@ -30,10 +30,10 @@ const paCombinedMenu: DropdownMenu = {
     icon: ClipboardList,
     items: [
         { href: "/pa-agreement/workload", label: "ภาระงาน" },
-        { href: "/dashboard#learning", label: "ด้านที่ 1 การจัดการเรียนรู้" },
-        { href: "/dashboard#support", label: "ด้านที่ 2 การส่งเสริมและสนับสนุน" },
-        { href: "/dashboard#self_dev", label: "ด้านที่ 3 การพัฒนาตนเองฯ" },
-        { href: "/dashboard#challenge", label: "ประเด็นท้าทาย" },
+        { href: "/pa-evaluation/learning", label: "ด้านที่ 1 การจัดการเรียนรู้" },
+        { href: "/pa-evaluation/support", label: "ด้านที่ 2 การส่งเสริมและสนับสนุน" },
+        { href: "/pa-evaluation/self_dev", label: "ด้านที่ 3 การพัฒนาตนเองฯ" },
+        { href: "/pa-evaluation/challenge", label: "ประเด็นท้าทาย" },
         { href: "/pa-report/evidence", label: "คลังหลักฐาน" },
     ],
 };

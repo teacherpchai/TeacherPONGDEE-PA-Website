@@ -18,12 +18,13 @@ import {
 } from "lucide-react";
 import { firebaseService } from "@/lib/firebaseService";
 import { FiscalYear, PA_CATEGORIES } from "@/types";
-import AgreementResultCard from "@/components/AgreementResultCard";
 import {
     calculateDashboardStats,
     DashboardStats,
     getCategoryEmoji,
 } from "@/lib/dashboardUtils";
+import CompetencyRadarChart from "@/components/charts/CompetencyRadarChart";
+import TaskDistributionChart from "@/components/charts/TaskDistributionChart";
 
 // Category icon mapping
 const categoryIcons = {
@@ -160,19 +161,37 @@ export default function DashboardPage() {
                             />
                         </div>
 
-                        {/* Category Progress */}
+                        {/* Charts Section */}
+                        <div className="grid md:grid-cols-2 gap-8 mb-8">
+                            <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
+                                <h2 className="text-lg font-semibold text-[var(--royal-blue)] mb-6 flex items-center gap-2">
+                                    <Target className="text-blue-500" />
+                                    สมรรถนะตามมาตรฐานตำแหน่ง (Radar)
+                                </h2>
+                                <CompetencyRadarChart data={stats.categoryStats} />
+                            </div>
+
+                            <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
+                                <h2 className="text-lg font-semibold text-[var(--royal-blue)] mb-6 flex items-center gap-2">
+                                    <BookOpen className="text-green-500" />
+                                    ปริมาณงานรายด้าน (Distribution)
+                                </h2>
+                                <TaskDistributionChart data={stats.categoryStats} />
+                            </div>
+                        </div>
+
+                        {/* Category Progress List (Keep existing logic but styled nicely) */}
                         <div className="bg-white rounded-2xl shadow-lg p-6 mb-8">
                             <h2 className="text-lg font-semibold text-[var(--royal-blue)] mb-4 flex items-center gap-2">
-                                📊 ความคืบหน้าตามหมวดหมู่
+                                📊 สรุปความคืบหน้าแบบละเอียด
                             </h2>
-                            <div className="space-y-4">
+                            <div className="grid md:grid-cols-2 gap-4">
                                 {stats.categoryStats.map((cat) => {
-                                    // Use type assertion if necessary, or ensure category string matches keys
                                     const IconComponent = categoryIcons[cat.category as keyof typeof categoryIcons] || Target;
                                     return (
-                                        <div key={cat.category} className="flex items-center gap-4">
-                                            <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-                                                <IconComponent size={18} className="text-[var(--royal-blue)]" />
+                                        <div key={cat.category} className="flex items-center gap-4 p-4 rounded-xl hover:bg-gray-50 transition-colors border border-gray-50">
+                                            <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center">
+                                                <IconComponent size={20} className="text-[var(--royal-blue)]" />
                                             </div>
                                             <div className="flex-1">
                                                 <div className="flex items-center justify-between mb-1">
@@ -183,7 +202,7 @@ export default function DashboardPage() {
                                                         {cat.completenessPercent}%
                                                     </span>
                                                 </div>
-                                                <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                                                <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
                                                     <div
                                                         className="h-full rounded-full transition-all duration-500"
                                                         style={{
@@ -192,9 +211,6 @@ export default function DashboardPage() {
                                                         }}
                                                     />
                                                 </div>
-                                                <div className="text-xs text-gray-500 mt-1">
-                                                    {cat.totalTasks} tasks • {cat.completedFields}/{cat.totalFields} fields
-                                                </div>
                                             </div>
                                         </div>
                                     );
@@ -202,44 +218,25 @@ export default function DashboardPage() {
                             </div>
                         </div>
 
-                        {/* Task Details - Agreement & Results Merged View */}
-                        <div className="space-y-8">
-                            {PA_CATEGORIES.map((category) => {
-                                const categoryTasks = stats.taskDetails.filter((t) => t.category === category.id);
-                                if (categoryTasks.length === 0) return null;
-
-                                return (
-                                    <section
-                                        key={category.id}
-                                        id={category.id}
-                                        className="scroll-mt-28"
-                                    >
-                                        <div className="flex items-center justify-between mb-4">
-                                            <h2 className="text-xl font-bold text-[var(--royal-blue)] flex items-center gap-2 font-[family-name:var(--font-prompt)]">
-                                                {getCategoryEmoji(category.id)} {category.labelTh}
-                                            </h2>
-                                            {category.id === "learning" && (
-                                                <Link
-                                                    href="/admin"
-                                                    className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
-                                                >
-                                                    จัดการ PA <ExternalLink size={14} />
-                                                </Link>
-                                            )}
-                                        </div>
-
-                                        <div className="space-y-6">
-                                            {categoryTasks.map((task) => (
-                                                <AgreementResultCard
-                                                    key={task.id}
-                                                    task={task}
-                                                    year={selectedYear}
-                                                />
-                                            ))}
-                                        </div>
-                                    </section>
-                                );
-                            })}
+                        {/* Links to Detailed Evaluation */}
+                        <div className="grid md:grid-cols-2 gap-6 mt-8">
+                            {PA_CATEGORIES.map((category) => (
+                                <Link
+                                    key={category.id}
+                                    href={`/pa-evaluation/${category.id}?year=${selectedYear}`}
+                                    className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-all border border-transparent hover:border-blue-200 group"
+                                >
+                                    <div className="flex items-center justify-between">
+                                        <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2 font-[family-name:var(--font-prompt)]">
+                                            {getCategoryEmoji(category.id)} {category.labelTh}
+                                        </h3>
+                                        <ExternalLink size={18} className="text-gray-400 group-hover:text-blue-600" />
+                                    </div>
+                                    <p className="text-sm text-gray-500 mt-2 font-[family-name:var(--font-sarabun)]">
+                                        คลิกเพื่อดูรายละเอียดข้อตกลงและผลการประเมิน
+                                    </p>
+                                </Link>
+                            ))}
                         </div>
                     </>
                 )}
