@@ -23,8 +23,8 @@ import {
     calculateDashboardStats,
     DashboardStats,
     getCategoryEmoji,
+    formatIndicatorCode,
 } from "@/lib/dashboardUtils";
-
 
 // Category icon mapping
 const categoryIcons = {
@@ -255,7 +255,14 @@ export default function DashboardPage() {
                                                         {formatIndicatorCode(task.indicatorCode)}
                                                     </td>
                                                     <td className="py-3 px-4 max-w-[200px] truncate">
-                                                        {getCategoryEmoji(task.category)} {task.title}
+                                                        <Link
+                                                            href={getReportUrl(task.category, selectedYear)}
+                                                            onClick={(e) => e.stopPropagation()}
+                                                            className="hover:underline hover:text-blue-600 flex items-center gap-1"
+                                                            title="คลิกเพื่อดูรายงาน"
+                                                        >
+                                                            {getCategoryEmoji(task.category)} {task.title}
+                                                        </Link>
                                                     </td>
                                                     <td className="text-center py-3 px-2">
                                                         <StatusIcon ok={task.completeness.hasAgreement} />
@@ -342,14 +349,26 @@ function getProgressColor(percent: number): string {
     return "linear-gradient(90deg, #ef4444, #dc2626)";
 }
 
-// Convert old indicator codes (2.1.x, 2.2.x, 2.3.x) to new format (1.x, 2.x, 3.x)
-function formatIndicatorCode(code: string): string {
-    // Learning: 2.1.x -> 1.x
-    if (code.startsWith("2.1.")) return "1." + code.substring(4);
-    // Support: 2.2.x -> 2.x
-    if (code.startsWith("2.2.")) return "2." + code.substring(4);
-    // Development: 2.3.x -> 3.x
-    if (code.startsWith("2.3.")) return "3." + code.substring(4);
+function getReportUrl(category: string, year: string): string {
+    const baseUrl = "/pa-report";
+    let path = "";
 
-    return code;
+    switch (category) {
+        case "learning":
+            path = "learning";
+            break;
+        case "support":
+            path = "support";
+            break;
+        case "self_dev":
+            path = "development";
+            break;
+        case "challenge":
+            path = "challenge";
+            break;
+        default:
+            return "#";
+    }
+
+    return `${baseUrl}/${path}?year=${year}`;
 }

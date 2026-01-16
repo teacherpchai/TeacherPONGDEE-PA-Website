@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { getCurrentFiscalYear } from "@/lib/fiscalYear";
+import { useSearchParams } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Loader2, Target, TrendingUp, Award, BarChart2, CheckCircle, BookOpen, Users, FlaskConical, LineChart } from "lucide-react";
@@ -11,9 +12,10 @@ import MathText from "@/components/MathText";
 import HtmlContent from "@/components/HtmlContent";
 
 export default function ReportChallengePage() {
+    const searchParams = useSearchParams();
     const currentYear = getCurrentFiscalYear().toString();
     const [years, setYears] = useState<string[]>([currentYear]);
-    const [selectedYear, setSelectedYear] = useState<string>(currentYear);
+    const [selectedYear, setSelectedYear] = useState<string>(searchParams.get("year") || currentYear);
     const [loading, setLoading] = useState(true);
     const [paRecords, setPaRecords] = useState<PATask[]>([]);
 
@@ -25,7 +27,9 @@ export default function ReportChallengePage() {
                     const yearStrings = yearsData.map((y) => y.year);
                     setYears(yearStrings);
                     const activeYear = yearsData.find((y) => y.isActive);
-                    if (activeYear) {
+
+                    // Only set default if no year in URL
+                    if (!searchParams.get("year") && activeYear) {
                         setSelectedYear(activeYear.year);
                     }
                 }
@@ -34,7 +38,7 @@ export default function ReportChallengePage() {
             }
         };
         fetchYears();
-    }, []);
+    }, [searchParams]);
 
     useEffect(() => {
         const fetchRecords = async () => {

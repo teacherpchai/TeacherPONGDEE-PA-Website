@@ -148,11 +148,12 @@ export function getTaskDetails(tasks: PATask[]): TaskDetail[] {
  * Calculate overall dashboard statistics
  */
 export function calculateDashboardStats(tasks: PATask[]): DashboardStats {
-    const totalTasks = tasks.length;
-    const totalEvidence = countEvidenceFiles(tasks);
-    const totalRichMedia = countRichMedia(tasks);
-    const categoryStats = getCategoryStats(tasks);
-    const taskDetails = getTaskDetails(tasks);
+    const sortedTasks = sortPATasks(tasks);
+    const totalTasks = sortedTasks.length;
+    const totalEvidence = countEvidenceFiles(sortedTasks);
+    const totalRichMedia = countRichMedia(sortedTasks);
+    const categoryStats = getCategoryStats(sortedTasks);
+    const taskDetails = getTaskDetails(sortedTasks);
 
     // Calculate overall completeness (average of all tasks)
     const overallCompleteness = totalTasks > 0
@@ -169,6 +170,63 @@ export function calculateDashboardStats(tasks: PATask[]): DashboardStats {
         categoryStats,
         taskDetails,
     };
+}
+
+/**
+ * Convert old indicator codes (2.1.x, 2.2.x, 2.3.x) to new format (1.x, 2.x, 3.x)
+ */
+export function formatIndicatorCode(code: string): string {
+    if (!code) return "";
+    // Learning: 2.1.x -> 1.x
+    if (code.startsWith("2.1.")) return "1." + code.substring(4);
+    // Support: 2.2.x -> 2.x
+    if (code.startsWith("2.2.")) return "2." + code.substring(4);
+    // Development: 2.3.x -> 3.x
+    if (code.startsWith("2.3.")) return "3." + code.substring(4);
+
+    return code;
+}
+
+/**
+ * Sort PA Tasks:
+ * 1. Standard indicators (1.1 - 3.3) sorted numerically
+ * 2. Challenges (challenge-1, challenge-2) sorted by ID
+ */
+export function sortPATasks(tasks: PATask[]): PATask[] {
+    return [...tasks].sort((a, b) => {
+        // Get formatted codes for comparison
+        const codeA = formatIndicatorCode(a.indicatorCode);
+        const codeB = formatIndicatorCode(b.indicatorCode);
+
+        // Check if items are challenges
+        const isChallengeA = codeA.toLowerCase().includes("challenge");
+        const isChallengeB = codeB.toLowerCase().includes("challenge");
+
+        // If one is challenge and other is not, challenge goes last
+        if (isChallengeA && !isChallengeB) return 1;
+        if (!isChallengeA && isChallengeB) return -1;
+
+        // If both are challenges, sort by the number in the ID
+        if (isChallengeA && isChallengeB) {
+            // Extract number from challenge string
+            const numA = parseInt(codeA.replace(/\D/g, "")) || 0;
+            const numB = parseInt(codeB.replace(/\D/g, "")) || 0;
+            return numA - numB;
+        }
+
+        // Standard sorting for numeric codes (1.1, 1.2, ..., 3.3)
+        // Split by dot to compare major and minor versions
+        const partsA = codeA.split(".").map(Number);
+        const partsB = codeB.split(".").map(Number);
+
+        // Compare major version
+        if (partsA[0] !== partsB[0]) {
+            return (partsA[0] || 0) - (partsB[0] || 0);
+        }
+
+        // Compare minor version
+        return (partsA[1] || 0) - (partsB[1] || 0);
+    });
 }
 
 /**

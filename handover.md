@@ -118,12 +118,11 @@ These rules ensure that:
 - **Charts**: Recharts
 - **PDF**: Feature Removed (2026-01-15)
 
-## Recent Updates (2026-01-15)
+## Recent Updates (2026-01-16)
 
-- **About Page Overhaul**: Moved "About Pongdee" to a dedicated `/about` page. Redesigned with a spacious grid layout.
-- **Workload Visuals**: Implemented subject tags and radial gauge charts for teaching hours. Added side-by-side semester comparison.
-- **Bug Fixes**: Fixed correct indicator codes, HTML rendering issues, and broken links.
-- **Cleanup**: Removed the PDF Export feature as requested.
+- **Dashboard Sorting**: Updated the sorting logic to display standard indicators (1.1-3.3) numerically, followed by Challenges (1, 2) at the end.
+- **Report Linking**: Made task names on the Dashboard clickable. Clicking a task now navigates directly to the corresponding Report page (Learning, Support, Development, Challenge) with the correct year pre-selected.
+- **URL Parameter Support**: Enhanced all Report pages to accept a `?year=` query parameter for deep linking.
 
 ## Future Development Suggestions
 
@@ -131,6 +130,8 @@ These rules ensure that:
 2. **Dark Mode Polish**: The site supports dark mode via Tailwind, but some custom colors (Royal Blue/Gold) might need adjustment for better contrast in dark environments.
 3. **Image Optimization**: Implementing a blurred placeholder for large hero images would improve the perceived loading speed.
 4. **Interactive Dashboard Filters**: Adding more granular filters (e.g., filter by completion status) to the Dashboard would help manage large sets of PA tasks.
+5. **Data Caching**: Implement `swr` or `react-query` to cache Firebase data and reduce read operations/loading times when navigating between Dashboard and Reports.
+6. **Bulk Edit Mode**: Add a feature in the Admin Dashboard to edit multiple indicator scores or completeness statuses at once.
 
 ---
-*Last Updated: 2026-01-15*
+*Last Updated: 2026-01-16*
